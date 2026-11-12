@@ -55,6 +55,8 @@ idf.py fullclean
 - **Flash over the board's COM/UART USB port.** The native USB-JTAG port connects and reads chip info but esptool failed while uploading its stub / writing flash (`0107 Checksum error`, `0105 invalid message`) on this board.
 - Sources are listed explicitly in `main/CMakeLists.txt`; add new `.cpp` files there.
 - OLED is a 128x64 SSD1306 at I2C `0x3C` on SDA 5 / SCL 4, running at 400 kHz. `OledDisplay` uses `esp_lcd` + LVGL 9.5 with an I1 full-refresh buffer; `sdkconfig.defaults` disables LVGL examples and enables the mono theme.
+- Audio is a MAX98357A on I2S0: BCLK 15, LRC 16, DOUT 7. `Speaker` supports mono/stereo PCM16 WAVs and boots with `/spiffs/Vgramoa.wav` at 40% volume (`kBootVolume` in `esp32-agent.cpp`). Keep `auto_clear` enabled or the idle I2S link replays stale data as noise.
+- WAV assets live in `spiffs_image/` and are flashed at `0x410000`. After changing them run `idf.py flash`; `idf.py app-flash` updates only the app and leaves SPIFFS untouched.
 
 STM32 (CubeMX + CMake):
 

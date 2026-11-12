@@ -1,0 +1,14 @@
+# Project defaults applied when sdkconfig is generated.
+# The board reports 16 MB flash.
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+
+# 4 MB app + ~12 MB SPIFFS for future audio/UI assets.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Build only the LVGL code we use.
+CONFIG_LV_BUILD_EXAMPLES=n
+
+# Better fit for the 1-bit SSD1306 than the default theme.
+CONFIG_LV_USE_THEME_MONO=y

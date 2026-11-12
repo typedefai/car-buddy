@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# ESP-IDF generated files
+firmware/esp32/build/
+firmware/esp32/sdkconfig
+firmware/esp32/sdkconfig.old
+firmware/esp32/managed_components/
+
+# Build output for other subsystems
+firmware/stm32/build/
+server/build/
+cmake-build-*/
+
+# Editors
+.vscode/
+.idea/
+
+# Local secrets / environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log

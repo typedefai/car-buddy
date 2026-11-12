@@ -23,6 +23,11 @@ class Speaker {
   // Plays a PCM16 WAV file (mono or stereo). Reconfigures I2S to match it.
   bool playWav(const char* path);
 
+  // Plays interleaved PCM16 samples. `sample_count` is the total number of
+  // samples (frames x channels), not frames.
+  bool playPcm16(const int16_t* samples, size_t sample_count,
+                 uint16_t channels, uint32_t sample_rate_hz);
+
   // Plays a sine tone. Blocks until the tone has been written to I2S.
   void playTone(uint32_t frequency_hz, uint32_t duration_ms);
 
@@ -32,6 +37,7 @@ class Speaker {
  private:
   bool configure(uint32_t sample_rate_hz, uint16_t channels);
   bool writeBytes(const void* data, size_t bytes);
+  bool writeScaledPcm16(const int16_t* samples, size_t sample_count);
 
   static constexpr uint32_t kDefaultSampleRateHz = 16000;
   i2s_chan_handle_t tx_chan_ = nullptr;

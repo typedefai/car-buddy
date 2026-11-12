@@ -4,6 +4,8 @@
 #include <driver/i2c_master.h>
 #include <esp_lcd_panel_io.h>
 #include <esp_lcd_panel_ops.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include <lvgl.h>
 
 class OledDisplay {
@@ -20,6 +22,10 @@ class OledDisplay {
   // Replaces the whole screen with a single centered line of text.
   void showText(const char* text);
 
+  // Runs LVGL's timer handler under the display lock. Returns the number of
+  // milliseconds until the next timer, or LV_NO_TIMER_READY.
+  uint32_t process();
+
  private:
   static bool onColorTransDone(esp_lcd_panel_io_handle_t io,
                                esp_lcd_panel_io_event_data_t* edata,
@@ -35,6 +41,7 @@ class OledDisplay {
   esp_lcd_panel_handle_t panel_handle_ = nullptr;
   lv_display_t* display_ = nullptr;
   lv_obj_t* label_ = nullptr;
+  SemaphoreHandle_t mutex_ = nullptr;
 };
 
 #endif

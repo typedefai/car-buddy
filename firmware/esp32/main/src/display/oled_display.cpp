@@ -40,6 +40,9 @@ OledDisplay::~OledDisplay() {
   if (i2c_bus_ != nullptr) {
     i2c_del_master_bus(i2c_bus_);
   }
+  if (mutex_ != nullptr) {
+    vSemaphoreDelete(mutex_);
+  }
 }
 
 void OledDisplay::initI2c() {
@@ -136,6 +139,9 @@ void OledDisplay::flushCallback(lv_display_t* disp, const lv_area_t* area,
 }
 
 void OledDisplay::init() {
+  mutex_ = xSemaphoreCreateMutex();
+  configASSERT(mutex_ != nullptr);
+
   ESP_LOGI(kTag, "I2C SDA=%d SCL=%d addr=0x%02X", OLED_I2C_SDA_PIN,
            OLED_I2C_SCL_PIN, OLED_I2C_ADDR);
   initI2c();
@@ -172,9 +178,23 @@ void OledDisplay::init() {
 }
 
 void OledDisplay::showText(const char* text) {
-  if (label_ == nullptr) {
+  if (mutex_ == nullptr ||
+      xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
     return;
   }
-  lv_label_set_text(label_, text);
-  lv_obj_center(label_);
+  if (label_ != nullptr) {
+    lv_label_set_text(label_, text);
+    lv_obj_center(label_);
+  }
+  xSemaphoreGive(mutex_);
+}
+
+uint32_t OledDisplay::process() {
+  if (mutex_ == nullptr ||
+      xSemaphoreTake(mutex_, portMAX_DELAY) != pdTRUE) {
+    return 1000;
+  }
+  const uint32_t next = lv_timer_handler();
+  xSemaphoreGive(mutex_);
+  return next;
 }

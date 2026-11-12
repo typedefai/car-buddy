@@ -56,6 +56,8 @@ idf.py fullclean
 - Sources are listed explicitly in `main/CMakeLists.txt`; add new `.cpp` files there.
 - OLED is a 128x64 SSD1306 at I2C `0x3C` on SDA 5 / SCL 4, running at 400 kHz. `OledDisplay` uses `esp_lcd` + LVGL 9.5 with an I1 full-refresh buffer; `sdkconfig.defaults` disables LVGL examples and enables the mono theme.
 - Audio is a MAX98357A on I2S0: BCLK 15, LRC 16, DOUT 7. `Speaker` supports mono/stereo PCM16 WAVs and boots with `/spiffs/Vgramoa.wav` at 40% volume (`kBootVolume` in `esp32-agent.cpp`). Keep `auto_clear` enabled or the idle I2S link replays stale data as noise.
+- Mic is an INMP441 on I2S1: WS 3, BCLK 6, SD 18. `Mic` uses 16 kHz, 32-bit slots, mono, converts to PCM16 with 4x gain, and requires `start()`/`stop()` around reads. The `audio_demo` task plays the boot WAV, records 3 s, then plays it back; the OLED shows `Recording...` / `Speaking...`.
+- LVGL is not thread-safe. All UI updates go through `OledDisplay::showText()` and the LVGL task calls `OledDisplay::process()`; both take the display mutex. Do not call LVGL directly from audio or network tasks.
 - WAV assets live in `spiffs_image/` and are flashed at `0x410000`. After changing them run `idf.py flash`; `idf.py app-flash` updates only the app and leaves SPIFFS untouched.
 
 STM32 (CubeMX + CMake):

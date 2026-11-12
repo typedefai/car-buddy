@@ -16,6 +16,7 @@ namespace {
 constexpr char kTag[] = "speaker";
 constexpr int kChunkFrames = 256;
 constexpr size_t kFileBufferSize = 1024;
+constexpr size_t kScaleChunkSamples = 512;
 constexpr float kTwoPi = 6.28318530717958647692f;
 constexpr int16_t kAmplitude = 8000;
 
@@ -205,8 +206,47 @@ bool Speaker::writeBytes(const void* data, size_t bytes) {
 
 bool Speaker::writePcm16(const int16_t* interleaved_stereo,
                          size_t frame_count) {
-  return writeBytes(interleaved_stereo,
-                    frame_count * 2 * sizeof(int16_t));
+  return writeScaledPcm16(interleaved_stereo, frame_count * 2);
+}
+
+bool Speaker::writeScaledPcm16(const int16_t* samples,
+                               size_t sample_count) {
+  if (samples == nullptr || sample_count == 0) {
+    return false;
+  }
+
+  int16_t buffer[kScaleChunkSamples];
+  size_t offset = 0;
+  while (offset < sample_count) {
+    size_t chunk = sample_count - offset;
+    if (chunk > kScaleChunkSamples) {
+      chunk = kScaleChunkSamples;
+    }
+    for (size_t i = 0; i < chunk; ++i) {
+      buffer[i] = static_cast<int16_t>(
+          static_cast<float>(samples[offset + i]) * volume_);
+    }
+    if (!writeBytes(buffer, chunk * sizeof(int16_t))) {
+      return false;
+    }
+    offset += chunk;
+  }
+  return true;
+}
+
+bool Speaker::playPcm16(const int16_t* samples, size_t sample_count,
+                        uint16_t channels, uint32_t sample_rate_hz) {
+  if (samples == nullptr || sample_count == 0 ||
+      !configure(sample_rate_hz, channels)) {
+    return false;
+  }
+  if (!writeScaledPcm16(samples, sample_count)) {
+    return false;
+  }
+
+  int16_t silence[256] = {};
+  writeScaledPcm16(silence, sizeof(silence) / sizeof(silence[0]));
+  return true;
 }
 
 bool Speaker::playWav(const char* path) {
@@ -263,11 +303,7 @@ bool Speaker::playWav(const char* path) {
     }
 
     const size_t sample_count = read / sizeof(int16_t);
-    for (size_t i = 0; i < sample_count; ++i) {
-      buffer[i] = static_cast<int16_t>(
-          static_cast<float>(buffer[i]) * volume_);
-    }
-    if (!writeBytes(buffer, sample_count * sizeof(int16_t))) {
+    if (!writeScaledPcm16(buffer, sample_count)) {
       ok = false;
       break;
     }
@@ -291,7 +327,6 @@ void Speaker::playTone(uint32_t frequency_hz, uint32_t duration_ms) {
   const uint32_t fade_frames = sample_rate_hz_ / 100;  // 10 ms
   const float phase_step =
       kTwoPi * static_cast<float>(frequency_hz) / sample_rate_hz_;
-  const float amplitude = static_cast<float>(kAmplitude) * volume_;
 
   int16_t buffer[kChunkFrames * 2];
   float phase = 0.0f;
@@ -319,7 +354,7 @@ void Speaker::playTone(uint32_t frequency_hz, uint32_t duration_ms) {
       }
 
       const int16_t sample =
-          static_cast<int16_t>(sinf(phase) * amplitude * envelope);
+          static_cast<int16_t>(sinf(phase) * kAmplitude * envelope);
       buffer[2 * i] = sample;
       buffer[2 * i + 1] = sample;
 

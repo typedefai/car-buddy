@@ -9,4 +9,8 @@
 #define SPEAKER_I2S_BCLK 15
 #define SPEAKER_I2S_LRC 16
 
+#define MIC_I2S_WS 3
+#define MIC_I2S_BCLK 6
+#define MIC_I2S_DATA 18
+
 #endif

@@ -5,4 +5,8 @@
 #define OLED_I2C_SCL_PIN 4
 #define OLED_I2C_ADDR 0x3C
 
+#define SPEAKER_I2S_DOUT 7
+#define SPEAKER_I2S_BCLK 15
+#define SPEAKER_I2S_LRC 16
+
 #endif

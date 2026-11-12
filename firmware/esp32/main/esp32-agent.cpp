@@ -1,7 +1,5 @@
 #include <lvgl.h>
 
-#include <cstdlib>
-
 #include <esp_heap_caps.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
@@ -42,7 +40,7 @@ void lvglTask(void* arg) {
   }
 }
 
-// Boot greeting, then record three seconds and play the captured audio back.
+// Boot greeting, then loop: record three seconds, play it back, repeat.
 // The OLED shows the current state so the demo is visible without a monitor.
 void audioDemoTask(void* arg) {
   auto* ctx = static_cast<AudioDemoContext*>(arg);
@@ -64,33 +62,35 @@ void audioDemoTask(void* arg) {
     return;
   }
 
-  ctx->display->showText("Recording...");
-  vTaskDelay(pdMS_TO_TICKS(100));
+  while (true) {
+    ctx->display->showText("Get ready...");
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
-  ctx->mic->start();
-  const size_t samples = ctx->mic->read(record, kRecordSamples, 1000);
-  ctx->mic->stop();
+    ctx->display->showText("Speak now...");
+    vTaskDelay(pdMS_TO_TICKS(150));
 
-  if (samples == 0) {
-    ESP_LOGE(kTag, "no audio captured");
-    ctx->display->showText("Mic failed");
-    free(record);
-    vTaskDelete(nullptr);
-    return;
+    ctx->mic->start();
+    const size_t samples = ctx->mic->read(record, kRecordSamples, 1000);
+    ctx->mic->stop();
+
+    if (samples == 0) {
+      ESP_LOGE(kTag, "no audio captured");
+      ctx->display->showText("Mic failed");
+      vTaskDelay(pdMS_TO_TICKS(1000));
+      continue;
+    }
+
+    ctx->display->showText("Playing...");
+    vTaskDelay(pdMS_TO_TICKS(100));
+    ESP_LOGI(kTag, "playing back %u samples", static_cast<unsigned>(samples));
+
+    if (!ctx->speaker->playPcm16(record, samples, 1, Mic::kSampleRateHz)) {
+      ESP_LOGE(kTag, "playback failed");
+    }
+    ESP_LOGI(kTag, "playback finished");
+
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
-
-  ctx->display->showText("Speaking...");
-  vTaskDelay(pdMS_TO_TICKS(100));
-  ESP_LOGI(kTag, "playing back %u samples", static_cast<unsigned>(samples));
-
-  if (!ctx->speaker->playPcm16(record, samples, 1, Mic::kSampleRateHz)) {
-    ESP_LOGE(kTag, "playback failed");
-  }
-  ESP_LOGI(kTag, "playback finished");
-
-  free(record);
-  ctx->display->showText("Hello, World!");
-  vTaskDelete(nullptr);
 }
 
 }  // namespace

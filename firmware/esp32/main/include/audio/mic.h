@@ -27,6 +27,7 @@ class Mic {
  private:
   i2s_chan_handle_t rx_chan_ = nullptr;
   bool started_ = false;
+  int32_t dc_ = 0;
 };
 
 #endif

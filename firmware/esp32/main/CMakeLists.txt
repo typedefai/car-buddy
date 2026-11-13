@@ -5,5 +5,5 @@ idf_component_register(
          "src/audio/mic.cpp"
          "src/storage.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES esp_driver_i2c esp_driver_i2s esp_lcd esp_timer lvgl spiffs
+    REQUIRES esp_driver_gpio esp_driver_i2c esp_driver_i2s esp_lcd esp_timer lvgl spiffs
 )

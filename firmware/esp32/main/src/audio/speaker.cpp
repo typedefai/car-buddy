@@ -16,7 +16,6 @@ namespace {
 constexpr char kTag[] = "speaker";
 constexpr int kChunkFrames = 256;
 constexpr size_t kFileBufferSize = 1024;
-constexpr size_t kScaleChunkSamples = 512;
 constexpr float kTwoPi = 6.28318530717958647692f;
 constexpr int16_t kAmplitude = 8000;
 
@@ -169,16 +168,6 @@ void Speaker::init() {
   configure(kDefaultSampleRateHz, 2);
 }
 
-void Speaker::setVolume(float volume) {
-  if (volume < 0.0f) {
-    volume = 0.0f;
-  }
-  if (volume > 1.0f) {
-    volume = 1.0f;
-  }
-  volume_ = volume;
-}
-
 bool Speaker::writeBytes(const void* data, size_t bytes) {
   if (tx_chan_ == nullptr || data == nullptr || bytes == 0) {
     return false;
@@ -206,32 +195,8 @@ bool Speaker::writeBytes(const void* data, size_t bytes) {
 
 bool Speaker::writePcm16(const int16_t* interleaved_stereo,
                          size_t frame_count) {
-  return writeScaledPcm16(interleaved_stereo, frame_count * 2);
-}
-
-bool Speaker::writeScaledPcm16(const int16_t* samples,
-                               size_t sample_count) {
-  if (samples == nullptr || sample_count == 0) {
-    return false;
-  }
-
-  int16_t buffer[kScaleChunkSamples];
-  size_t offset = 0;
-  while (offset < sample_count) {
-    size_t chunk = sample_count - offset;
-    if (chunk > kScaleChunkSamples) {
-      chunk = kScaleChunkSamples;
-    }
-    for (size_t i = 0; i < chunk; ++i) {
-      buffer[i] = static_cast<int16_t>(
-          static_cast<float>(samples[offset + i]) * volume_);
-    }
-    if (!writeBytes(buffer, chunk * sizeof(int16_t))) {
-      return false;
-    }
-    offset += chunk;
-  }
-  return true;
+  return writeBytes(interleaved_stereo,
+                    frame_count * 2 * sizeof(int16_t));
 }
 
 bool Speaker::playPcm16(const int16_t* samples, size_t sample_count,
@@ -240,12 +205,12 @@ bool Speaker::playPcm16(const int16_t* samples, size_t sample_count,
       !configure(sample_rate_hz, channels)) {
     return false;
   }
-  if (!writeScaledPcm16(samples, sample_count)) {
+  if (!writeBytes(samples, sample_count * sizeof(int16_t))) {
     return false;
   }
 
   int16_t silence[256] = {};
-  writeScaledPcm16(silence, sizeof(silence) / sizeof(silence[0]));
+  writeBytes(silence, sizeof(silence));
   return true;
 }
 
@@ -303,7 +268,7 @@ bool Speaker::playWav(const char* path) {
     }
 
     const size_t sample_count = read / sizeof(int16_t);
-    if (!writeScaledPcm16(buffer, sample_count)) {
+    if (!writeBytes(buffer, sample_count * sizeof(int16_t))) {
       ok = false;
       break;
     }

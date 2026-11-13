@@ -1,5 +1,7 @@
 #include <lvgl.h>
 
+#include <cstdint>
+
 #include <esp_heap_caps.h>
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
@@ -14,7 +16,6 @@ namespace {
 
 constexpr char kTag[] = "app";
 constexpr char kBootWav[] = "/spiffs/Vgramoa.wav";
-constexpr float kBootVolume = 0.4f;  // 40% of full scale, about -8 dB
 constexpr uint32_t kRecordDurationMs = 3000;
 constexpr uint32_t kLvglTaskStackSize = 8192;
 constexpr uint32_t kAudioTaskStackSize = 8192;
@@ -82,8 +83,9 @@ void audioDemoTask(void* arg) {
 
     ctx->display->showText("Playing...");
     vTaskDelay(pdMS_TO_TICKS(100));
-    ESP_LOGI(kTag, "playing back %u samples", static_cast<unsigned>(samples));
 
+    ESP_LOGI(kTag, "playing back %u samples",
+             static_cast<unsigned>(samples));
     if (!ctx->speaker->playPcm16(record, samples, 1, Mic::kSampleRateHz)) {
       ESP_LOGE(kTag, "playback failed");
     }
@@ -107,7 +109,6 @@ extern "C" void app_main(void) {
   mountSpiffs();
 
   speaker.init();
-  speaker.setVolume(kBootVolume);
   mic.init();
 
   ESP_LOGI(kTag, "OLED + speaker + mic ready");

@@ -10,7 +10,9 @@
 #include "audio/mic.h"
 #include "audio/speaker.h"
 #include "audio/wake_word.h"
+#include "device.h"
 #include "display/oled_display.h"
+#include "led/rgb_led.h"
 #include "storage.h"
 
 namespace {
@@ -162,6 +164,7 @@ extern "C" void app_main(void) {
   static Speaker speaker;
   static Mic mic;
   static WakeWord wake;
+  static RgbLed led(static_cast<gpio_num_t>(RGB_LED_GPIO));
   static AudioContext audio_ctx{&display, &speaker, &mic, &wake};
 
   display.init();
@@ -171,8 +174,10 @@ extern "C" void app_main(void) {
 
   speaker.init();
   mic.init();
+  led.init();
+  led.breathe(0, 64, 160, 3000);
 
-  ESP_LOGI(kTag, "OLED + speaker + mic ready");
+  ESP_LOGI(kTag, "OLED + speaker + mic + LED ready");
 
   const BaseType_t lvgl_created =
       xTaskCreate(lvglTask, "lvgl", kLvglTaskStackSize, &display,

@@ -58,6 +58,7 @@ idf.py fullclean
 - Audio is a MAX98357A on I2S0: BCLK 15, LRC 16, DOUT 7. `Speaker` supports mono/stereo PCM16 WAVs and writes samples as-is; there is no software volume control (use the MAX98357A GAIN resistor). Keep `auto_clear` enabled or the idle I2S link replays stale data as noise.
 - Mic is an INMP441/ICS-43434 on I2S1: WS 17, BCLK 6, SD 18, L/R on GPIO3. GPIO3 is read with a pull-down to select the left slot (right if pulled high). `Mic::readRaw()` gives unity PCM16 for WakeNet; `Mic::read()` applies a 4x + DC-blocked version for local playback.
 - Wake word uses ESP-SR `espressif/esp-sr ^2.6.2` with `wn9_computer_tts` (`CONFIG_SR_WN_WN9_COMPUTER_TTS`), threshold 0.5. On detection: `Yes?` -> ack tone -> 3 s record -> `Playing...` (4x playback) -> `Say Computer`. **Do not call WakeNet `clean()` after detection** — it crashes for this model; WakeNet re-arms itself. `idf.py flash` writes the 6 MB model partition; `idf.py app-flash` does not.
+- RGB LED is a WS2812 on GPIO48, driven by `espressif/led_strip` over RMT+DMA. `RgbLed::breathe()` runs a 3 s blue breathing effect; it is independent of the audio pipeline.
 - LVGL is not thread-safe. All UI updates go through `OledDisplay::showText()` and the LVGL task calls `OledDisplay::process()`; both take the display mutex. Do not call LVGL directly from audio or network tasks.
 - WAV assets live in `spiffs_image/` and are flashed at `0xa10000`; the ESP-SR model is at `0x410000`. After changing assets run `idf.py flash`; `idf.py app-flash` updates only the app.
 

@@ -14,4 +14,6 @@
 #define MIC_I2S_DATA 18
 #define MIC_LR_SELECT_PIN 3
 
+#define RGB_LED_GPIO 48
+
 #endif

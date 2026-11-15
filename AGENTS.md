@@ -56,7 +56,7 @@ idf.py fullclean
 - Sources are listed explicitly in `main/CMakeLists.txt`; add new `.cpp` files there.
 - OLED is a 128x64 SSD1306 at I2C `0x3C` on SDA 5 / SCL 4, running at 400 kHz. `OledDisplay` uses `esp_lcd` + LVGL 9.5 with an I1 full-refresh buffer; `sdkconfig.defaults` disables LVGL examples and enables the mono theme.
 - Audio is a MAX98357A on I2S0: BCLK 15, LRC 16, DOUT 7. `Speaker` supports mono/stereo PCM16 WAVs and writes samples as-is; there is no software volume control (use the MAX98357A GAIN resistor). Keep `auto_clear` enabled or the idle I2S link replays stale data as noise.
-- Mic is an INMP441/ICS-43434 on I2S1: WS 17, BCLK 6, SD 18, L/R on GPIO3. GPIO3 is read with a pull-down to select the left slot (right if pulled high). `Mic` uses 16 kHz, 32-bit slots, mono, and a DC blocker. The `audio_demo` task loops: boot WAV once, then `Get ready...` -> `Speak now...` (3 s record) -> `Playing...` (playback).
+- Mic is an INMP441/ICS-43434 on I2S1: WS 17, BCLK 6, SD 18, L/R on GPIO3. GPIO3 is read with a pull-down to select the left slot (right if pulled high). `Mic` uses 16 kHz, 32-bit slots, mono, a DC blocker, and a fixed `>>14` (4x, +12 dB) capture gain. The `audio_demo` task loops: boot WAV once, then `Get ready...` -> `Speak now...` (3 s record) -> `Playing...` (playback).
 - LVGL is not thread-safe. All UI updates go through `OledDisplay::showText()` and the LVGL task calls `OledDisplay::process()`; both take the display mutex. Do not call LVGL directly from audio or network tasks.
 - WAV assets live in `spiffs_image/` and are flashed at `0x410000`. After changing them run `idf.py flash`; `idf.py app-flash` updates only the app and leaves SPIFFS untouched.
 

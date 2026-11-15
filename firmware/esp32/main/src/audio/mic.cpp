@@ -12,6 +12,9 @@ namespace {
 
 constexpr char kTag[] = "mic";
 constexpr size_t kReadChunkFrames = 128;
+// 24-bit data is left-aligned in a 32-bit slot. >>16 is unity 16-bit gain;
+// >>14 applies a fixed 4x (+12 dB) capture gain. The result is clamped.
+constexpr int kPcm16Shift = 14;
 
 }  // namespace
 
@@ -126,7 +129,7 @@ size_t Mic::read(int16_t* out, size_t max_samples, uint32_t timeout_ms) {
     const size_t frames = bytes_read / sizeof(int32_t);
     for (size_t i = 0; i < frames; ++i) {
       // INMP441/ICS-43434: valid 24 bits are left-justified.
-      const int32_t x = raw[i] >> 16;
+      const int32_t x = raw[i] >> kPcm16Shift;
       const int32_t magnitude = x < 0 ? -x : x;
       if (magnitude > peak) {
         peak = magnitude;

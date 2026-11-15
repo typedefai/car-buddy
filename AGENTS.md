@@ -51,14 +51,15 @@ idf.py fullclean
 ```
 
 - Track `sdkconfig.defaults`, `dependencies.lock`, and `partitions.csv`; `sdkconfig`, `build/`, and `managed_components/` are generated. After changing `partitions.csv`, delete `sdkconfig` and re-run `set-target`.
-- The board reports **16 MB flash / 8 MB embedded PSRAM**. `sdkconfig.defaults` selects 16 MB and `partitions.csv` is `4 MB factory + ~12 MB SPIFFS`; keep those in sync.
+- The board reports **16 MB flash / 8 MB embedded PSRAM**. `sdkconfig.defaults` enables octal PSRAM and 240 MHz, and `partitions.csv` is `4 MB factory + 6 MB ESP-SR model + ~5.9 MB SPIFFS`; keep those in sync.
 - **Flash over the board's COM/UART USB port.** The native USB-JTAG port connects and reads chip info but esptool failed while uploading its stub / writing flash (`0107 Checksum error`, `0105 invalid message`) on this board.
 - Sources are listed explicitly in `main/CMakeLists.txt`; add new `.cpp` files there.
 - OLED is a 128x64 SSD1306 at I2C `0x3C` on SDA 5 / SCL 4, running at 400 kHz. `OledDisplay` uses `esp_lcd` + LVGL 9.5 with an I1 full-refresh buffer; `sdkconfig.defaults` disables LVGL examples and enables the mono theme.
 - Audio is a MAX98357A on I2S0: BCLK 15, LRC 16, DOUT 7. `Speaker` supports mono/stereo PCM16 WAVs and writes samples as-is; there is no software volume control (use the MAX98357A GAIN resistor). Keep `auto_clear` enabled or the idle I2S link replays stale data as noise.
-- Mic is an INMP441/ICS-43434 on I2S1: WS 17, BCLK 6, SD 18, L/R on GPIO3. GPIO3 is read with a pull-down to select the left slot (right if pulled high). `Mic` uses 16 kHz, 32-bit slots, mono, a DC blocker, and a fixed `>>14` (4x, +12 dB) capture gain. The `audio_demo` task loops: boot WAV once, then `Get ready...` -> `Speak now...` (3 s record) -> `Playing...` (playback).
+- Mic is an INMP441/ICS-43434 on I2S1: WS 17, BCLK 6, SD 18, L/R on GPIO3. GPIO3 is read with a pull-down to select the left slot (right if pulled high). `Mic::readRaw()` gives unity PCM16 for WakeNet; `Mic::read()` applies a 4x + DC-blocked version for local playback.
+- Wake word uses ESP-SR `espressif/esp-sr ^2.6.2` with `wn9_computer_tts` (`CONFIG_SR_WN_WN9_COMPUTER_TTS`), threshold 0.5. On detection: `Yes?` -> ack tone -> 3 s record -> `Playing...` (4x playback) -> `Say Computer`. **Do not call WakeNet `clean()` after detection** — it crashes for this model; WakeNet re-arms itself. `idf.py flash` writes the 6 MB model partition; `idf.py app-flash` does not.
 - LVGL is not thread-safe. All UI updates go through `OledDisplay::showText()` and the LVGL task calls `OledDisplay::process()`; both take the display mutex. Do not call LVGL directly from audio or network tasks.
-- WAV assets live in `spiffs_image/` and are flashed at `0x410000`. After changing them run `idf.py flash`; `idf.py app-flash` updates only the app and leaves SPIFFS untouched.
+- WAV assets live in `spiffs_image/` and are flashed at `0xa10000`; the ESP-SR model is at `0x410000`. After changing assets run `idf.py flash`; `idf.py app-flash` updates only the app.
 
 STM32 (CubeMX + CMake):
 

@@ -79,7 +79,8 @@ void Mic::init() {
            "INMP441 ready: %u Hz, 32-bit slots, L/R=%d (%s), WS=%d BCLK=%d SD=%d",
            static_cast<unsigned>(kSampleRateHz), lr_level,
            slot_mask == I2S_STD_SLOT_RIGHT ? "right" : "left", MIC_I2S_WS,
-           MIC_I2S_BCLK, MIC_I2S_DATA);}
+           MIC_I2S_BCLK, MIC_I2S_DATA);
+}
 
 void Mic::start() {
   if (rx_chan_ == nullptr || started_) {
@@ -99,6 +100,15 @@ void Mic::stop() {
 }
 
 size_t Mic::read(int16_t* out, size_t max_samples, uint32_t timeout_ms) {
+  return readInternal(out, max_samples, timeout_ms, true);
+}
+
+size_t Mic::readRaw(int16_t* out, size_t max_samples, uint32_t timeout_ms) {
+  return readInternal(out, max_samples, timeout_ms, false);
+}
+
+size_t Mic::readInternal(int16_t* out, size_t max_samples,
+                         uint32_t timeout_ms, bool processed) {
   if (!started_ || out == nullptr || max_samples == 0) {
     return 0;
   }
@@ -129,16 +139,21 @@ size_t Mic::read(int16_t* out, size_t max_samples, uint32_t timeout_ms) {
     const size_t frames = bytes_read / sizeof(int32_t);
     for (size_t i = 0; i < frames; ++i) {
       // INMP441/ICS-43434: valid 24 bits are left-justified.
-      const int32_t x = raw[i] >> kPcm16Shift;
-      const int32_t magnitude = x < 0 ? -x : x;
-      if (magnitude > peak) {
-        peak = magnitude;
-      }
-      sum += x;
+      const int32_t x = raw[i] >> (processed ? kPcm16Shift : 16);
+      int32_t sample = x;
 
-      // One-pole DC blocker (~40 Hz corner at 16 kHz).
-      dc_ += (x - dc_) / 64;
-      int32_t sample = x - dc_;
+      if (processed) {
+        const int32_t magnitude = x < 0 ? -x : x;
+        if (magnitude > peak) {
+          peak = magnitude;
+        }
+        sum += x;
+
+        // One-pole DC blocker (~40 Hz corner at 16 kHz).
+        dc_ += (x - dc_) / 64;
+        sample = x - dc_;
+      }
+
       if (sample > INT16_MAX) {
         sample = INT16_MAX;
       } else if (sample < INT16_MIN) {
@@ -149,9 +164,11 @@ size_t Mic::read(int16_t* out, size_t max_samples, uint32_t timeout_ms) {
     total += frames;
   }
 
-  const long avg =
-      total ? static_cast<long>(sum / static_cast<int64_t>(total)) : 0;
-  ESP_LOGI(kTag, "recorded %u samples, peak=%ld, avg=%ld",
-           static_cast<unsigned>(total), static_cast<long>(peak), avg);
+  if (processed) {
+    const long avg =
+        total ? static_cast<long>(sum / static_cast<int64_t>(total)) : 0;
+    ESP_LOGI(kTag, "recorded %u samples, peak=%ld, avg=%ld",
+             static_cast<unsigned>(total), static_cast<long>(peak), avg);
+  }
   return total;
 }

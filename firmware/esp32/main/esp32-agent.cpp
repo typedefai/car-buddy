@@ -7,8 +7,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include "audio/mic.h"
-#include "audio/speaker.h"
+#include "audio/audio_codec.h"
 #include "audio/wake_word.h"
 #include "device.h"
 #include "display/oled_display.h"
@@ -24,12 +23,10 @@ constexpr uint32_t kLvglTaskStackSize = 8192;
 constexpr uint32_t kAudioTaskStackSize = 12288;
 constexpr UBaseType_t kLvglTaskPriority = 2;
 constexpr UBaseType_t kAudioTaskPriority = 5;
-constexpr int32_t kPlaybackGain = 4;
 
 struct AudioContext {
   OledDisplay* display;
-  Speaker* speaker;
-  Mic* mic;
+  AudioCodec* codec;
   WakeWord* wake;
 };
 
@@ -46,25 +43,13 @@ void lvglTask(void* arg) {
   }
 }
 
-void applyPlaybackGain(int16_t* samples, size_t count) {
-  for (size_t i = 0; i < count; ++i) {
-    int32_t sample = static_cast<int32_t>(samples[i]) * kPlaybackGain;
-    if (sample > INT16_MAX) {
-      sample = INT16_MAX;
-    } else if (sample < INT16_MIN) {
-      sample = INT16_MIN;
-    }
-    samples[i] = static_cast<int16_t>(sample);
-  }
-}
-
 void audioTask(void* arg) {
   auto* ctx = static_cast<AudioContext*>(arg);
 
   // Play the greeting before enabling the microphone so it cannot wake itself.
-  if (!ctx->speaker->playWav(kBootWav)) {
+  if (!ctx->codec->playWav(kBootWav)) {
     ESP_LOGW(kTag, "boot WAV unavailable, playing test tone");
-    ctx->speaker->playTone(440, 180);
+    ctx->codec->playTone(440, 180);
   }
   vTaskDelay(pdMS_TO_TICKS(200));
 
@@ -76,7 +61,7 @@ void audioTask(void* arg) {
   }
 
   const int chunk = ctx->wake->chunk_size();
-  if (chunk <= 0 || ctx->wake->sample_rate() != Mic::kSampleRateHz) {
+  if (chunk <= 0 || ctx->wake->sample_rate() != 16000) {
     ESP_LOGE(kTag, "wake word format mismatch");
     ctx->display->showText("Wake format error");
     vTaskDelete(nullptr);
@@ -85,8 +70,7 @@ void audioTask(void* arg) {
 
   auto* frame = static_cast<int16_t*>(heap_caps_malloc(
       chunk * sizeof(int16_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
-  constexpr size_t kRecordSamples =
-      Mic::kSampleRateHz * kRecordDurationMs / 1000;
+  constexpr size_t kRecordSamples = 16000 * kRecordDurationMs / 1000;
   auto* record = static_cast<int16_t*>(heap_caps_malloc(
       kRecordSamples * sizeof(int16_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
   if (record == nullptr) {
@@ -101,59 +85,51 @@ void audioTask(void* arg) {
     return;
   }
 
-  ctx->mic->start();
   ctx->display->showText("Say Computer");
   ESP_LOGI(kTag, "listening for \"Computer\", chunk=%d", chunk);
 
   while (true) {
-    const size_t got = ctx->mic->readRaw(frame, chunk, 1000);
+    const size_t got = ctx->codec->readMono(frame, chunk);
     if (got != static_cast<size_t>(chunk)) {
       vTaskDelay(pdMS_TO_TICKS(10));
       continue;
     }
 
-    // The INMP441 is quiet; feed WakeNet the same 4x gain used for playback.
-    applyPlaybackGain(frame, chunk);
     if (!ctx->wake->detect(frame)) {
       continue;
     }
 
     ESP_LOGI(kTag, "Computer detected");
     ctx->display->showText("Yes?");
-    ctx->mic->stop();
-    ctx->speaker->playTone(880, 120);
-    vTaskDelay(pdMS_TO_TICKS(100));
+    ctx->codec->playTone(880, 120);
+    ctx->codec->flushInput();
 
     ctx->display->showText("Listening...");
-    ctx->mic->start();
     size_t recorded = 0;
     while (recorded < kRecordSamples) {
       const size_t remaining = kRecordSamples - recorded;
       const size_t want =
           remaining < static_cast<size_t>(chunk) ? remaining : chunk;
-      const size_t n = ctx->mic->readRaw(record + recorded, want, 1000);
+      const size_t n = ctx->codec->readMono(record + recorded, want);
       if (n == 0) {
         break;
       }
       recorded += n;
     }
-    ctx->mic->stop();
 
     if (recorded > 0) {
-      applyPlaybackGain(record, recorded);
       ctx->display->showText("Playing...");
       vTaskDelay(pdMS_TO_TICKS(100));
       ESP_LOGI(kTag, "playing back %u samples",
                static_cast<unsigned>(recorded));
-      if (!ctx->speaker->playPcm16(record, recorded, 1,
-                                   Mic::kSampleRateHz)) {
+      if (!ctx->codec->writeMono(record, recorded)) {
         ESP_LOGE(kTag, "playback failed");
       }
       ESP_LOGI(kTag, "playback finished");
     }
 
+    ctx->codec->flushInput();
     ctx->display->showText("Say Computer");
-    ctx->mic->start();
   }
 }
 
@@ -161,23 +137,26 @@ void audioTask(void* arg) {
 
 extern "C" void app_main(void) {
   static OledDisplay display;
-  static Speaker speaker;
-  static Mic mic;
+  static AudioCodec codec;
   static WakeWord wake;
   static RgbLed led(static_cast<gpio_num_t>(RGB_LED_GPIO));
-  static AudioContext audio_ctx{&display, &speaker, &mic, &wake};
+  static AudioContext audio_ctx{&display, &codec, &wake};
 
   display.init();
   display.showText("Hello, World!");
 
   mountSpiffs();
 
-  speaker.init();
-  mic.init();
+  if (!codec.init()) {
+    ESP_LOGE(kTag, "audio codec initialization failed");
+    display.showText("Codec failed");
+    return;
+  }
+
   led.init();
   led.breathe(0, 64, 160, 3000);
 
-  ESP_LOGI(kTag, "OLED + speaker + mic + LED ready");
+  ESP_LOGI(kTag, "OLED + codec + LED ready");
 
   const BaseType_t lvgl_created =
       xTaskCreate(lvglTask, "lvgl", kLvglTaskStackSize, &display,

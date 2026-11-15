@@ -5,14 +5,15 @@
 #define OLED_I2C_SCL_PIN 4
 #define OLED_I2C_ADDR 0x3C
 
-#define SPEAKER_I2S_DOUT 7
-#define SPEAKER_I2S_BCLK 15
-#define SPEAKER_I2S_LRC 16
-
-#define MIC_I2S_WS 17
-#define MIC_I2S_BCLK 6
-#define MIC_I2S_DATA 18
-#define MIC_LR_SELECT_PIN 3
+// ES7210 + ES8311 + NS4150B codec module.
+#define CODEC_I2C_SDA 12
+#define CODEC_I2C_SCL 11
+#define CODEC_I2S_MCLK 10
+#define CODEC_I2S_BCLK 9
+#define CODEC_I2S_WS 17
+#define CODEC_I2S_DOUT 3
+#define CODEC_I2S_DIN 18
+#define CODEC_PA_EN 13
 
 #define RGB_LED_GPIO 48
 

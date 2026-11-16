@@ -12,6 +12,7 @@
 #include "device.h"
 #include "display/oled_display.h"
 #include "led/rgb_led.h"
+#include "link/stm32_link.h"
 #include "storage.h"
 
 namespace {
@@ -224,6 +225,8 @@ extern "C" void app_main(void) {
   display.showText("Hello, World!");
 
   mountSpiffs();
+
+  Stm32Link_Start();
 
   if (!codec.init(kEnableMic)) {
     ESP_LOGE(kTag, "audio codec initialization failed");

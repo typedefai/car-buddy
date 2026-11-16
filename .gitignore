@@ -23,3 +23,6 @@ cmake-build-*/
 
 # Logs
 *.log
+
+# Host build for shared protocol tests
+shared/build/

@@ -67,4 +67,11 @@
 // LED VCC -> 3V3 or 5V, LED GND -> GND.
 #define RGB_LED_GPIO 48
 
+// UART link to the STM32 (STM32 uses USART2: PA2=TX, PA3=RX, 115200 8N1).
+// ESP32 GPIO14 (TX) -> STM32 PA3 (USART2_RX)
+// ESP32 GPIO21 (RX) <- STM32 PA2 (USART2_TX)
+// Connect GND on both boards.
+#define UART_STM32_TX 14
+#define UART_STM32_RX 21
+
 #endif  // CAR_BUDDY_DEVICE_H_

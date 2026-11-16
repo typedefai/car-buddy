@@ -15,9 +15,9 @@ class AudioCodec {
   AudioCodec(const AudioCodec&) = delete;
   AudioCodec& operator=(const AudioCodec&) = delete;
 
-  bool init();
+  bool init(bool with_input = true);
 
-  // Reads mono PCM16 samples from ES7210 (MIC1/left channel).
+  // Reads mono PCM16 samples from ES7210 TDM slot 0 (MIC1).
   size_t readMono(int16_t* out, size_t max_samples);
 
   // Writes mono PCM16 samples to ES8311 (duplicated to both I2S slots).
@@ -31,6 +31,18 @@ class AudioCodec {
 
   // Discards queued mic data (used after speaker playback).
   void flushInput();
+
+  // Directly drives the NS4150B enable pin (debug/bring-up).
+  void setPaEnabled(bool enabled);
+
+  // Sets ES8311 output volume (0..100).
+  void setOutputVolume(int volume);
+
+  // Logs key ES8311 registers (debug/bring-up).
+  void dumpRegisters(const char* label);
+
+  // Logs key ES7210 registers (debug/bring-up).
+  void dumpInRegisters(const char* label);
 
  private:
   i2c_master_bus_handle_t i2c_bus_ = nullptr;

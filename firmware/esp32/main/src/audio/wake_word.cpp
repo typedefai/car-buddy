@@ -38,7 +38,7 @@ bool WakeWord::init() {
              models->model_info[i]);
   }
 
-  char* name = esp_srmodel_filter(models, ESP_WN_PREFIX, "computer");
+  char* name = esp_srmodel_filter(models, ESP_WN_PREFIX, "xiaoaitongxue");
   if (name == nullptr) {
     name = esp_srmodel_filter(models, ESP_WN_PREFIX, nullptr);
   }
@@ -59,7 +59,9 @@ bool WakeWord::init() {
     ESP_LOGE(kTag, "failed to create WakeNet model %s", name);
     return false;
   }
-  iface->set_det_threshold(data, 0.5f, 1);
+  // 0.4 is the lowest supported threshold: maximum sensitivity for a small
+  // toy speaker/mic. Raise it if the speaker's own playback causes wakeups.
+  iface->set_det_threshold(data, 0.4f, 1);
   // Do not call iface->clean() after detection: it crashes in this model.
   // WakeNet9 re-arms itself; the next detect() call works normally.
 

@@ -10,6 +10,17 @@ void Stm32Link_Start();
 // True when a valid frame arrived within the last 500 ms.
 bool Stm32Link_IsAlive();
 
+// Latest command sent to the STM32. throttle/steering are permille.
+struct Stm32Command {
+  int16_t throttle;
+  int16_t steering;
+  bool enable;
+  bool estop;
+};
+
+void Stm32Link_SetCommand(int16_t throttle, int16_t steering, bool enable,
+                          bool estop);
+
 // Last parsed telemetry, or zeroed before the first frame.
 struct Stm32Telemetry {
   uint32_t uptime_ms;

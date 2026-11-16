@@ -19,6 +19,7 @@ constexpr int kTxPin = UART_STM32_TX;
 constexpr int kRxPin = UART_STM32_RX;
 constexpr int kBaud = 115200;
 constexpr uint32_t kHeartbeatPeriodMs = 100;
+constexpr uint32_t kSetpointPeriodMs = 50;
 constexpr uint32_t kLinkTimeoutMs = 500;
 constexpr uint32_t kTaskStack = 4096;
 constexpr UBaseType_t kTaskPriority = 4;
@@ -28,6 +29,23 @@ uint16_t g_tx_seq = 0;
 volatile uint32_t g_last_rx_ms = 0;
 volatile bool g_alive = false;
 Stm32Telemetry g_telemetry = {};
+portMUX_TYPE g_command_mux = portMUX_INITIALIZER_UNLOCKED;
+Stm32Command g_command = {0, 0, false, false};
+
+Stm32Command CopyCommand() {
+  portENTER_CRITICAL(&g_command_mux);
+  const Stm32Command command = g_command;
+  portEXIT_CRITICAL(&g_command_mux);
+  return command;
+}
+
+void StopCommand() {
+  portENTER_CRITICAL(&g_command_mux);
+  g_command.throttle = 0;
+  g_command.steering = 0;
+  g_command.enable = false;
+  portEXIT_CRITICAL(&g_command_mux);
+}
 
 bool SendFrame(uint8_t type, const void* payload, uint8_t payload_len) {
   uint8_t buffer[CAR_PROTOCOL_MAX_FRAME];
@@ -73,6 +91,7 @@ void LinkTask(void* arg) {
   (void)arg;
   uint8_t buffer[64];
   uint32_t last_heartbeat_ms = 0;
+  uint32_t last_setpoint_ms = 0;
 
   while (true) {
     const int read = uart_read_bytes(kUart, buffer, sizeof(buffer),
@@ -91,6 +110,22 @@ void LinkTask(void* arg) {
 
     const uint32_t now_ms =
         static_cast<uint32_t>(esp_timer_get_time() / 1000ULL);
+
+    if (now_ms - last_setpoint_ms >= kSetpointPeriodMs) {
+      last_setpoint_ms = now_ms;
+      const Stm32Command command = CopyCommand();
+      car_setpoint_t setpoint = {};
+      setpoint.throttle = command.throttle;
+      setpoint.steering = command.steering;
+      if (command.enable) {
+        setpoint.flags |= CAR_SETPOINT_ENABLE;
+      }
+      if (command.estop) {
+        setpoint.flags |= CAR_SETPOINT_ESTOP;
+      }
+      SendFrame(CAR_MSG_SETPOINT, &setpoint, sizeof(setpoint));
+    }
+
     if (now_ms - last_heartbeat_ms >= kHeartbeatPeriodMs) {
       last_heartbeat_ms = now_ms;
       SendFrame(CAR_MSG_HEARTBEAT, nullptr, 0);
@@ -98,7 +133,8 @@ void LinkTask(void* arg) {
 
     if (g_alive && now_ms - g_last_rx_ms > kLinkTimeoutMs) {
       g_alive = false;
-      ESP_LOGW(kTag, "link lost");
+      StopCommand();
+      ESP_LOGW(kTag, "link lost; motion stopped");
     }
   }
 }
@@ -133,3 +169,13 @@ bool Stm32Link_IsAlive() {
 }
 
 Stm32Telemetry Stm32Link_Telemetry() { return g_telemetry; }
+
+void Stm32Link_SetCommand(int16_t throttle, int16_t steering, bool enable,
+                          bool estop) {
+  portENTER_CRITICAL(&g_command_mux);
+  g_command.throttle = throttle;
+  g_command.steering = steering;
+  g_command.enable = enable;
+  g_command.estop = estop;
+  portEXIT_CRITICAL(&g_command_mux);
+}

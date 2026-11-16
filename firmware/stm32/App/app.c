@@ -8,9 +8,12 @@
 #include "usart.h"
 #include "uart_link.h"
 
+#include "board_config.h"
+#include "motor.h"
+
 // 1 = bring-up test only: blink PC13 and print "Hello, World!" on USART1.
-// 0 = ESP32 UART link, heartbeat, telemetry, safe-stop state machine.
-#define BRINGUP_BLINK_ONLY 1
+// 0 = ESP32 UART link, motor control, heartbeat, telemetry, safe-stop.
+#define BRINGUP_BLINK_ONLY 0
 
 #define HEARTBEAT_PERIOD_MS 50u
 #define TELEMETRY_PERIOD_MS 500u
@@ -27,6 +30,7 @@ static uint16_t g_tx_seq = 0;
 static uint32_t g_last_rx_ms = 0;
 static uint32_t g_last_heartbeat_ms = 0;
 static uint32_t g_last_telemetry_ms = 0;
+static uint32_t g_last_control_ms = 0;
 static bool g_link_alive = false;
 #endif
 
@@ -110,6 +114,19 @@ static void apply_setpoint(const car_frame_t *frame) {
     next.steering = 0;
   }
   g_setpoint = next;
+
+  if (g_state == APP_STATE_READY) {
+    const int16_t left =
+        clamp_permille((int16_t)(next.throttle + next.steering));
+    const int16_t right =
+        clamp_permille((int16_t)(next.throttle - next.steering));
+    Motor_SetTargets(left, right);
+  } else {
+    Motor_SetTargets(0, 0);
+    if (g_state == APP_STATE_ESTOP) {
+      Motor_Stop();
+    }
+  }
 }
 
 static void stop_motion(void) {
@@ -119,6 +136,7 @@ static void stop_motion(void) {
   if (g_state != APP_STATE_ESTOP) {
     g_state = APP_STATE_IDLE;
   }
+  Motor_Stop();
 }
 #endif
 
@@ -129,10 +147,12 @@ void App_Init(void) {
 #if BRINGUP_BLINK_ONLY
   bringup_init();
 #else
+  Motor_Init();
   UartLink_Init();
   g_last_rx_ms = HAL_GetTick() - (LINK_TIMEOUT_MS + 1u);
   g_last_heartbeat_ms = HAL_GetTick();
   g_last_telemetry_ms = HAL_GetTick();
+  g_last_control_ms = HAL_GetTick();
   g_link_alive = false;
 #endif
 }
@@ -162,8 +182,19 @@ void App_Loop(void) {
   if ((uint32_t)(now - g_last_rx_ms) > LINK_TIMEOUT_MS) {
     if (g_link_alive) {
       g_link_alive = false;
+      stop_motion();
     }
-    stop_motion();
+  }
+
+  if ((uint32_t)(now - g_last_control_ms) >= MOTOR_CONTROL_PERIOD_MS) {
+    const uint32_t dt_ms = now - g_last_control_ms;
+    g_last_control_ms = now;
+    Motor_Update(dt_ms);
+  }
+
+  if (Motor_HasFault()) {
+    g_state = APP_STATE_ESTOP;
+    Motor_Stop();
   }
 
   if ((uint32_t)(now - g_last_heartbeat_ms) >= HEARTBEAT_PERIOD_MS) {
@@ -175,15 +206,17 @@ void App_Loop(void) {
     g_last_telemetry_ms = now;
     car_telemetry_t telemetry = {
         .uptime_ms = now,
-        .left_speed_mm_s = 0,
-        .right_speed_mm_s = 0,
+        .left_speed_mm_s = Motor_LeftSpeedMmS(),
+        .right_speed_mm_s = Motor_RightSpeedMmS(),
         .battery_mv = 0,
         .state = (uint8_t)g_state,
-        .fault = 0,
+        .fault = Motor_HasFault() ? 1u : 0u,
     };
     UartLink_SendFrame(CAR_MSG_TELEMETRY, g_tx_seq++, now, &telemetry,
                        sizeof(telemetry));
   }
+
+  Motor_RefreshWatchdog();
 #endif
 }
 

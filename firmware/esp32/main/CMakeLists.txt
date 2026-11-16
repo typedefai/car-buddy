@@ -4,6 +4,7 @@ idf_component_register(
          "src/audio/audio_codec.cpp"
          "src/audio/wake_word.cpp"
          "src/link/stm32_link.cpp"
+         "src/link/drive_console.cpp"
          "src/led/rgb_led.cpp"
          "src/storage.cpp"
          "../../../shared/protocol/car_protocol.c"

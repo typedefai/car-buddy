@@ -47,7 +47,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     App/app.c
     App/uart_link.c
+    App/motor.c
     ../../shared/protocol/car_protocol.c
+    Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c
+    Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c
 )
 
 # Add include paths

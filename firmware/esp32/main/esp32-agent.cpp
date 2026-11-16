@@ -12,6 +12,7 @@
 #include "device.h"
 #include "display/oled_display.h"
 #include "led/rgb_led.h"
+#include "link/drive_console.h"
 #include "link/stm32_link.h"
 #include "storage.h"
 
@@ -227,6 +228,7 @@ extern "C" void app_main(void) {
   mountSpiffs();
 
   Stm32Link_Start();
+  DriveConsole_Start();
 
   if (!codec.init(kEnableMic)) {
     ESP_LOGE(kTag, "audio codec initialization failed");

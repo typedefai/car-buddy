@@ -64,6 +64,8 @@ Current CubeMX configuration:
 ## Application layout
 
 - `App/app.c` — link state machine, heartbeat, telemetry, setpoint clamping
+- `App/motor.c` — TB6612 PWM/direction, encoder timers, skid-steer mixing,
+  slew limiting, stall detection, IWDG
 - `App/uart_link.c` — USART2 DMA RX ring buffer + DMA TX, IRQ handlers
 - `../shared/protocol/` — versioned CRC frame shared with the ESP32/server
 
@@ -71,13 +73,52 @@ The STM32 sends `HEARTBEAT` every 50 ms and `TELEMETRY` every 500 ms. It stops
 motion when no valid frame has arrived for 300 ms, and only leaves the safe
 state after a `SETPOINT` with `CAR_SETPOINT_ENABLE`.
 
-Not implemented yet (next milestone):
+## Car control
 
-- TB6612FNG PWM/direction pins
-- encoder timers
-- steering servo (if the chassis needs it)
-- IWDG (enable via CubeMX when the motor loop lands)
-- hardware motor-power cut
+The motor/encoder pin map and the full wiring table are in
+[`../../hardware/stm32-car-wiring.md`](../../hardware/stm32-car-wiring.md).
+
+- 4 driven wheels, skid steer: left pair = throttle + steering, right pair =
+  throttle - steering.
+- 4 quadrature encoders: TIM2/TIM3/TIM4/TIM8.
+- TB6612 STBY is low at boot and on every stop/fault.
+- IWDG is started in `Motor_Init` (~2 s) and refreshed from the main loop.
+- Stall detection stops the motors if a side is driven hard but no encoder
+  movement is seen for 1 s.
+- `MOTOR_*_INVERT` and `ENCODER_*_SIGN` in `board_config.h` handle reversed
+  wiring.
+
+The `.ioc` currently covers clock, SWD, USART1, and USART2. Motor/encoder
+timer/GPIO initialization lives in `App/motor.c` and should be migrated into
+the `.ioc` once the pin map is frozen. When you add TIM1/encoders to the
+`.ioc`, remove the manual `stm32f1xx_hal_tim*.c` sources from `CMakeLists.txt`
+and let CubeMX copy/enable the TIM HAL files.
+
+Set `BRINGUP_BLINK_ONLY` in `App/app.c` to `1` for the PC13 blink + USART1
+`Hello, World!` bring-up test, or `0` for the car-control firmware.
+
+## ESP32 console
+
+The ESP32 starts a UART0 console at 115200:
+
+```text
+w/f : forward      x/b : reverse
+a   : turn left    d   : turn right
+s   : stop         e   : e-stop latch
+c   : clear e-stop +/- : speed step
+h/? : help
+```
+
+Every command is sent to the STM32 as a `SETPOINT` at 50 Hz. If telemetry
+stops for 500 ms, the ESP32 clears its command and the STM32 stops on its own
+300 ms timeout.
+
+## Not implemented yet
+
+- Steering servo (current design is skid steer)
+- Battery voltage ADC
+- IMU / range sensors
+- Hardware motor-power cut (required on the real chassis)
 
 ## ESP32 wiring
 

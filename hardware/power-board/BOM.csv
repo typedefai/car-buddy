@@ -1,37 +1,36 @@
 Ref,Qty,Value / Part,Package,Manufacturer PN,LCSC,Notes
 U1,1,MP2315 5V buck,TSOT-23-8,MP2315GJ-Z,C45889,5.0V 3A synchronous buck
 U2,1,MP2315 3.3V buck,TSOT-23-8,MP2315GJ-Z,C45889,3.27V 3A synchronous buck
-Q1,1,P-MOSFET -30V -11A,SO-8,SI4435DDY-T1-GE3,C4355022,Reverse-polarity protection; verify LCSC code/stock
-F1,1,7.5A slow-blow fuse,5x20mm,Generic,-,Use a quality fuse; 10A if motor stall requires
-FH1,1,Fuse holder,5x20mm PCB,Generic,-,Match F1
-SW1,1,Power switch 6A,PCB slide,Generic,-,SPST; gate/load switch
-D1,1,TVS 12V,SMB,SMBJ12A,C693548,VBAT transient clamp
-D2,1,Green LED,0603,Generic,-,VBAT indicator
-D3,1,Green LED,0603,Generic,-,5V indicator
-D4,1,Green LED,0603,Generic,-,3V3 indicator
-D5,1,Zener 12V,SOT-23,BZX84C12,-,Q1 gate-source clamp
-L1,1,4.7uH 5A inductor,5x5mm,SRN5040-4R7M,-,Low DCR; 5V buck
-L2,1,4.7uH 5A inductor,5x5mm,SRN5040-4R7M,-,Low DCR; 3.3V buck
-C1,1,470uF 16V electrolytic,8x10mm,Generic,-,Low ESR; VBAT bulk
-C2,1,10uF 25V X7R,1210,Generic,-,U1 input
-C3,1,10uF 25V X7R,1210,Generic,-,U1 input
-C4,1,22uF 10V X7R,1206,Generic,-,U1 output
-C5,1,22uF 10V X7R,1206,Generic,-,U1 output
-C6,1,100nF 50V X7R,0603,Generic,-,U1 output
-C7,1,10uF 25V X7R,1210,Generic,-,U2 input
-C8,1,10uF 25V X7R,1210,Generic,-,U2 input
-C9,1,22uF 10V X7R,1206,Generic,-,U2 output
-C10,1,22uF 10V X7R,1206,Generic,-,U2 output
-C11,1,100nF 50V X7R,0603,Generic,-,U2 output
-C12,1,100nF 50V X7R,0603,Generic,-,VBAT high-frequency bypass
-C13,1,100nF 50V X7R,0603,Generic,-,U1 bootstrap
-C14,1,100nF 50V X7R,0603,Generic,-,U2 bootstrap
-C15,1,100nF 50V X7R,0603,Generic,-,U1 VCC bypass
-C16,1,100nF 50V X7R,0603,Generic,-,U2 VCC bypass
-C17,1,100nF 50V X7R,0603,Generic,-,VBAT sense filter
-C18,1,100nF 50V X7R,0603,Generic,-,Q1 gate-source
-C19,1,100pF 50V C0G,0603,Generic,-,U1 feedforward
-C20,1,100pF 50V C0G,0603,Generic,-,U2 feedforward
+Q1,1,P-MOSFET -30V -11A,SO-8,SI4435DY-T1-GE3-HX,C18212772,Reverse-polarity protection
+F1,1,5x20 fuse holder,TH,FUSE-TH_BF013,C9900020280,Holds a 7.5 A slow-blow 5x20 fuse
+SW1,1,Rocker switch 10A,TH,KCD1-101,C9900022451,Main power switch
+D1,1,TVS 12V,SMB,SMBJ12A,C356757,VBAT transient clamp
+D2,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,VBAT indicator
+D3,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,5V indicator
+D4,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,3V3 indicator
+D5,1,Zener 12V,SOT-23,BZX84C12,C499794,Q1 gate-source clamp
+L1,1,4.7uH 5A inductor,5x5mm SMD,SRN5040-4R7M,C2041710,5V buck
+L2,1,4.7uH 5A inductor,5x5mm SMD,SRN5040-4R7M,C2041710,3.3V buck
+C1,1,470uF 16V electrolytic,SMD 8x8.3,16V470UF,C9900014916,VBAT bulk
+C2,1,10uF 25V X7R,1206,Generic ceramic,-,U1 input
+C3,1,10uF 25V X7R,1206,Generic ceramic,-,U1 input
+C4,1,22uF 10V X7R,1206,Generic ceramic,-,U1 output
+C5,1,22uF 10V X7R,1206,Generic ceramic,-,U1 output
+C6,1,100nF 50V X7R,0603,Generic ceramic,-,U1 output
+C7,1,10uF 25V X7R,1206,Generic ceramic,-,U2 input
+C8,1,10uF 25V X7R,1206,Generic ceramic,-,U2 input
+C9,1,22uF 10V X7R,1206,Generic ceramic,-,U2 output
+C10,1,22uF 10V X7R,1206,Generic ceramic,-,U2 output
+C11,1,100nF 50V X7R,0603,Generic ceramic,-,U2 output
+C12,1,100nF 50V X7R,0603,Generic ceramic,-,VBAT HF bypass
+C13,1,100nF 50V X7R,0603,Generic ceramic,-,U1 bootstrap
+C14,1,100nF 50V X7R,0603,Generic ceramic,-,U2 bootstrap
+C15,1,100nF 50V X7R,0603,Generic ceramic,-,U1 VCC bypass
+C16,1,100nF 50V X7R,0603,Generic ceramic,-,U2 VCC bypass
+C17,1,100nF 50V X7R,0603,Generic ceramic,-,VBAT sense filter
+C18,1,100nF 50V X7R,0603,Generic ceramic,-,Q1 gate-source
+C19,1,100pF 50V C0G,0603,Generic ceramic,-,U1 feedforward
+C20,1,100pF 50V C0G,0603,Generic ceramic,-,U2 feedforward
 R1,1,100k 1% 1/10W,0603,Generic,-,U1 FB top
 R2,1,19.1k 1% 1/10W,0603,Generic,-,U1 FB bottom
 R3,1,100k 1% 1/10W,0603,Generic,-,U2 FB top
@@ -42,24 +41,18 @@ R7,1,2.2k 1% 1/10W,0603,Generic,-,VBAT LED
 R8,1,1k 1% 1/10W,0603,Generic,-,5V LED
 R9,1,1k 1% 1/10W,0603,Generic,-,3V3 LED
 R10,1,100k 1% 1/10W,0603,Generic,-,Q1 gate pull-down
-R11,1,20 ohm 1% 1/10W,0603,Generic,-,U1 bootstrap series
-R12,1,20 ohm 1% 1/10W,0603,Generic,-,U2 bootstrap series
+R11,1,20R 1% 1/10W,0603,Generic,-,U1 bootstrap series
+R12,1,20R 1% 1/10W,0603,Generic,-,U2 bootstrap series
 R13,1,100k 1% 1/10W,0603,Generic,-,U1 EN pull-up
 R14,1,100k 1% 1/10W,0603,Generic,-,U2 EN pull-up
-J1,1,XT30PW-M,THT,AMASS XT30PW-M,-,Battery input
-J3,1,JST-XH 2-pin,THT,B2B-XH-A(LF)(SN),-,5V output
-J4,1,JST-XH 2-pin,THT,B2B-XH-A(LF)(SN),-,3.3V output
-J5,1,XT30PW-F,THT,AMASS XT30PW-F,-,Motor VBAT output
-J6,1,5.08mm 2-pin terminal,THT,Generic,-,Aux VBAT output
-J7,1,JST-XH 3-pin,THT,B3B-XH-A(LF)(SN),-,VBAT sense / GND / 3.3V
-TP1,1,Test point 1.0mm,THT,Generic,-,VBAT
-TP2,1,Test point 1.0mm,THT,Generic,-,5V
-TP3,1,Test point 1.0mm,THT,Generic,-,3.3V
-TP4,1,Test point 1.0mm,THT,Generic,-,GND
-TP5,1,Test point 1.0mm,THT,Generic,-,VBAT_SENSE
-H1,1,M3 mounting hole,3.2mm,Generic,-,Mechanical
-H2,1,M3 mounting hole,3.2mm,Generic,-,Mechanical
-H3,1,M3 mounting hole,3.2mm,Generic,-,Mechanical
-H4,1,M3 mounting hole,3.2mm,Generic,-,Mechanical
-BMS1,1,2S 10A Li-ion BMS module,External,Generic,-,Must be part of the battery pack; balancing recommended
-BH1,1,2x18650 battery holder,External,Generic,-,Optional if the pack is pre-built
+J1,1,XT30PW-M,TH,XT30PW-M36,C9900222726,Battery input
+J3,1,JST-XH 2-pin,TH,B2B-XH-A,C19272845,5V output
+J4,1,JST-XH 2-pin,TH,B2B-XH-A,C19272845,3.3V output
+J5,1,XT30PW-F,TH,XT30PW-F20,C2913282,Motor VBAT output
+J6,1,5.08mm 2-pin terminal,TH,KF2EDGK-5.08-2P,C9900089420,Aux VBAT output
+J7,1,JST-XH 3-pin,TH,B3B-XH-AM-BK,C565985,VBAT sense / GND / 3.3V
+TP1,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,VBAT
+TP2,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,5V
+TP3,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,3.3V
+TP4,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,GND
+TP5,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,VBAT_SENSE

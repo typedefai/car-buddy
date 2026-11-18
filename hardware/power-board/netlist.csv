@@ -31,6 +31,8 @@ LED_VBAT,R7,1,VBAT LED resistor
 GND,R7,2,VBAT LED resistor
 VBAT,J5,1,Motor VBAT output
 GND,J5,2,Motor VBAT output
+GND,J5,3,Motor VBAT connector shield tab
+GND,J5,4,Motor VBAT connector shield tab
 VBAT,J6,1,Aux VBAT terminal
 GND,J6,2,Aux VBAT terminal
 VBAT,R5,1,VBAT sense top

@@ -4,7 +4,7 @@ Three-board split for the car:
 
 | Board | Purpose | Status |
 |---|---|---|
-| `power-board/` | 2S Li-ion input, VBAT direct output, 5 V and 3.3 V rails | design package v0.1 |
+| `power-board/` | 2S Li-ion input, VBAT direct output, 5 V and 3.3 V rails | schematic + PCB complete, DRC clean |
 | `esp32-board/` | ESP32-S3 carrier: OLED, ES7210/ES8311 codec, mic, speaker, RGB LED, UART to STM32 | not started |
 | `stm32-board/` | STM32F103ZET6 carrier: two TB6612FNG, four encoders, UART to ESP32 | wiring defined in `stm32-car-wiring.md`; PCB not started |
 

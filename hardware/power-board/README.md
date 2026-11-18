@@ -2,9 +2,9 @@
 
 2S Li-ion input, direct VBAT output, 5 V/3 A, and 3.3 V/3 A rails for the car.
 
-**Status:** schematic/netlist/BOM/layout package v0.1. The EasyEDA project is
-not created yet because the EasyEDA API Gateway extension is not connected;
-see `easyeda/README.md`.
+**Status:** schematic and PCB complete in EasyEDA Pro. 4 schematic pages, fully
+routed 2-layer 70 x 50 mm PCB, DRC clean (0 violations). The editable project is
+in [easyeda/car-buddy-power](easyeda/car-buddy-power/).
 
 ## Inputs and outputs
 
@@ -16,14 +16,14 @@ see `easyeda/README.md`.
 | 5 V rail | 5.0 V, 3 A peak / 2 A continuous |
 | 3.3 V rail | 3.27 V, 3 A peak / 2 A continuous |
 | VBAT sense | 0–2.1 V for 6.0–8.4 V, 3-pin header |
-| Board size | 70 x 50 mm, 2-layer, 1.6 mm, 2 oz copper |
+| Board size | 70 x 50 mm, 2-layer, 1.6 mm, 1 oz copper |
 
 ## Architecture
 
 ```text
 J1 XT30 (2S pack)
-  -> F1 7.5 A fuse
-  -> SW1 power switch
+  -> F1 5x20 fuse holder (7.5 A slow-blow)
+  -> SW1 KCD1-101 power switch
   -> Q1 SI4435 reverse-polarity P-FET
   -> VBAT
        -> D1 SMBJ12A TVS
@@ -37,7 +37,8 @@ J1 XT30 (2S pack)
 ```
 
 Detailed connections: [schematic.md](schematic.md) and
-[netlist.csv](netlist.csv).
+[netlist.csv](netlist.csv). The EasyEDA netlist was validated against
+`netlist.csv` pin by pin (24 nets, 57 components).
 
 ## Why these choices
 
@@ -52,8 +53,7 @@ Detailed connections: [schematic.md](schematic.md) and
   the 2S pack stays within that range. Motor noise is isolated from the buck
   inputs by the fuse, switch, TVS, and bulk capacitor.
 - **No on-board charger.** Charge the protected pack with a proper 2S Li-ion
-  charger. Do not charge through the board unless the pack's BMS explicitly
-  supports same-port charging and the motors are disabled.
+  charger. Do not charge through the board.
 
 ## Load budget
 
@@ -71,10 +71,10 @@ unless the thermal test in [test-plan.md](test-plan.md) passes with margin.
 
 ## Protection and safety
 
-- **F1 7.5 A fuse** protects the battery wiring and board traces.
-- **SW1** is the main power switch; it carries the full load. Use a 6 A or
-  higher switch.
-- **Q1 SI4435DDY** blocks reverse battery polarity. Drain to the battery side,
+- **F1 5x20 fuse holder** with a 7.5 A slow-blow fuse protects the battery
+  wiring and board traces.
+- **SW1 KCD1-101** is the main power switch and carries the full load.
+- **Q1 SI4435** blocks reverse battery polarity. Drain to the battery side,
   source to VBAT, gate pulled to GND through 100 k, 12 V gate-source zener.
 - **D1 SMBJ12A** clamps motor/inductive transients on VBAT.
 - **C1 470 uF** bulk capacitor absorbs motor current steps.
@@ -91,28 +91,29 @@ unless the thermal test in [test-plan.md](test-plan.md) passes with margin.
 | J1 | XT30PW-M | 1 = VBAT_BMS+, 2 = GND |
 | J3 | JST-XH 2-pin | 1 = 5 V, 2 = GND |
 | J4 | JST-XH 2-pin | 1 = 3.3 V, 2 = GND |
-| J5 | XT30PW-F | 1 = VBAT, 2 = GND |
+| J5 | XT30PW-F | 1 = VBAT, 2 = GND, 3/4 = shield tabs to GND |
 | J6 | 5.08 mm 2-pin terminal | 1 = VBAT, 2 = GND |
 | J7 | JST-XH 3-pin | 1 = VBAT_SENSE, 2 = GND, 3 = 3.3 V |
-| SW1 | 6 A slide switch | series with VBAT |
-| F1 | 5 x 20 mm fuse holder | 7.5 A slow-blow |
+| SW1 | KCD1-101 rocker | series with VBAT |
+| F1 | 5x20 fuse holder | 7.5 A slow-blow |
 | TP1–TP5 | test points | VBAT, 5 V, 3.3 V, GND, VBAT_SENSE |
+| H1, H2 | 3.2 mm NPTH | M3 mounting holes, bottom corners |
 
 ## Files
 
 - [schematic.md](schematic.md) — block diagram and detailed buck connections
-- [BOM.csv](BOM.csv) — bill of materials
-- [netlist.csv](netlist.csv) — net-to-pin list
+- [BOM.csv](BOM.csv) — bill of materials with LCSC codes
+- [netlist.csv](netlist.csv) — net-to-pin list (matches the EasyEDA netlist)
 - [pcb-layout.md](pcb-layout.md) — stackup, placement, trace widths
 - [test-plan.md](test-plan.md) — bring-up and load tests
-- [easyeda/README.md](easyeda/README.md) — EasyEDA project creation status
+- [easyeda/README.md](easyeda/README.md) — EasyEDA project, scripts and IDs
 
 ## Open items
 
 - Confirm the actual 2S pack/BMS connector and cell holder.
-- Confirm motor stall current and choose F1 (7.5 A vs 10 A).
-- Add a charge connector only if the chosen BMS supports same-port charging.
-- Create the EasyEDA schematic and PCB once the API Gateway extension is
-  connected; export EPRJ3 into this folder.
+- Confirm motor stall current; the fuse is 7.5 A.
+- Widen the VBAT/5 V/3.3 V tracks to the values in `pcb-layout.md` before a
+  high-current build (the autorouter used 0.3 mm for power nets).
+- Rebuild the copper pours in the EasyEDA GUI before exporting Gerbers.
 - Add a 5 V/3.3 V power-good signal to the STM32 if brownout diagnostics are
   needed.

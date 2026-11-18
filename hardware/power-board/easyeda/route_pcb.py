@@ -13,7 +13,11 @@ import time
 MM = 39.3701
 
 
+OPEN = "await eda.dmt_EditorControl.openDocument('4081b372105a948c');\nawait new Promise(r => setTimeout(r, 500));\n"
+
+
 def run(js, timeout=300):
+    js = OPEN + js
     res = subprocess.run([sys.executable, "eda.py"], input=js, capture_output=True, text=True, timeout=timeout)
     if res.returncode != 0:
         raise SystemExit(res.stderr[-2000:])

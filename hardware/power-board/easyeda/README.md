@@ -5,41 +5,43 @@ and saved as a local EPRJ3 folder:
 
 ```text
 easyeda/car-buddy-power/          <- copy this folder, or open it from EasyEDA
-  car-buddy-power.eprj3           project file
-  sch/Power/*.esch2               schematic pages
-  pcb/PCB1.epcb2                  PCB
+  car-buddy-power-v2.eprj3        project file
+  sch/Schematic1/电源原理图.esch2  single-sheet schematic
+  pcb/Power.epcb2                 PCB
 ```
 
 Open it in EasyEDA Pro with **File -> Open -> Open Local Project** and pick
-`car-buddy-power.eprj3`.
+`car-buddy-power-v2.eprj3`.
 
 ## Status
 
 | Document | Content |
 |---|---|
-| Schematic | 4 pages: `Input`, `5V Rail`, `3V3 Rail`, `Sense & Connectors` |
-| Components | 57 (24 nets) |
+| Schematic | one A4 sheet, 6 titled blocks, all 57 components |
+| Nets | 24, validated against `../netlist.csv` (0 differences) |
 | PCB | 70 x 50 mm, 2 layers, fully routed |
-| DRC | 0 violations |
+| DRC | 0 violations, 0 ratlines |
 | Pours | GND on top and bottom (rebuild in the GUI before Gerber export) |
 | Mounting | 2 x 3.2 mm NPTH, bottom corners |
 
 ## Schematic notes
 
+- Everything is on one page: battery input, reverse protection, VBAT clamp,
+  the 3.3 V buck, the 5 V buck, and the connectors/indicators/sense block.
 - Each pin is attached to a short wire carrying the net name, so connectivity
-  is defined by net names rather than long routed wires. This keeps the pages
-  readable and makes the netlist exactly match `../netlist.csv`.
-- Pages are A4 landscape with titled boxes per functional block.
-- `U1`/`U2` pin 1 (AAM) is tied to pin 7 (VCC) for forced CCM.
+  is defined by net names rather than long routed wires. The netlist therefore
+  matches `../netlist.csv` exactly.
+- `U1`/`U2` pin 1 (AAM) is tied to pin 7 (VCC).
 - `J5` pins 3/4 are the XT30-F shield tabs, tied to GND.
+- Net names: `VBAT_RAIL`, `VCC3V3` and `VCC5V` are used for the protected
+  battery rail and the two buck VCC nodes (see `../README.md`).
 
 ## PCB notes
 
 - Board outline: closed polyline on the Board Outline layer (11).
 - Placement coordinates are in millimetres from the lower-left corner; see
   `../pcb-layout.md` and `place_pcb.py`.
-- Signal tracks 0.25 mm; power nets 0.3 mm (8 segments stay at 0.25 mm where
-  0.3 mm would violate clearance).
+- Signal tracks 0.25 mm; power nets 0.3 mm where clearance allows.
 - GND pours on both layers, inset 0.3 mm, priority 1.
 
 ## Scripts
@@ -52,20 +54,25 @@ run them from this folder with the EasyEDA window open and the
 | Script | Purpose |
 |---|---|
 | `eda.py` | Minimal bridge client: sends JS to `/execute`, prints JSON |
-| `build_schematic.py PAGE` | Builds one schematic page (`input`, `5v`, `3v3`, `io`) |
-| `place_pcb.py` | Draws the board outline and places all 57 components |
+| `build_schematic.py clearwires` | Deletes all schematic wires |
+| `build_schematic.py place A B` | Places parts `A..B` |
+| `build_schematic.py wire A B` | Wires pins/buses for parts `A..B` |
+| `build_schematic.py decor` | Redraws the block boxes and title |
+| `build_schematic.py save` | Saves the schematic |
+| `place_pcb.py` | Places all 57 components on the PCB |
 | `route_pcb.py` | Clears tracks, autoroutes, saves, adds GND pours, runs DRC |
 | `check_netlist.py` | Compares the EasyEDA netlist against `../netlist.csv` |
 | `shot.py PAGE_UUID OUT.png` | Screenshot a schematic page |
-| `shot_pcb.py OUT.png [x1 y1 x2 y2]` | Screenshot the PCB (region in mm) |
+| `shot_pcb.py OUT.png` | Screenshot the PCB |
 
-Typical rebuild:
+Typical rebuild (the bridge caps a request at ~30 s, hence the chunks):
 
 ```bash
-python3 build_schematic.py input
-python3 build_schematic.py 5v
-python3 build_schematic.py 3v3
-python3 build_schematic.py io
+python3 build_schematic.py clearwires
+for i in 0 10 20 30 40 50; do python3 build_schematic.py place $i $((i+10)); done
+for i in 0 8 16 24 32 40 48 56; do python3 build_schematic.py wire $i $((i+8)); done
+python3 build_schematic.py decor
+python3 build_schematic.py save
 python3 check_netlist.py
 python3 place_pcb.py
 python3 route_pcb.py
@@ -75,7 +82,7 @@ After changes, copy the live project back and commit:
 
 ```bash
 rsync -a --delete \
-  ~/Documents/LCEDA-Pro/projects/car-buddy-power/ \
+  ~/Documents/LCEDA-Pro/projects/car-buddy-power-v2/ \
   hardware/power-board/easyeda/car-buddy-power/
 ```
 
@@ -83,29 +90,31 @@ rsync -a --delete \
 
 | Item | UUID |
 |---|---|
-| Project | `f7155a0e0e356c3ee55e5cb5f2ac522bcb1b042d02e0207e74869905c46cecb9` |
-| Board | `d41ddd579c7c652e` |
-| Schematic | `d1450b3ab5fccb9c` |
-| Page `Input` | `8da9c96e54f30398` |
-| Page `5V Rail` | `f122051c8588a54e` |
-| Page `3V3 Rail` | `b1a685136aabdee8` |
-| Page `Sense & Connectors` | `53e158872de05a41` |
-| PCB | `aa65e6d7e62b98c1` |
+| Project | `0f0cf3ed0dd37301365499c8cc0c96ae99b2924e980a27e583f064b23b6f1369` |
+| Board | `6f6c8462bc68715a` |
+| Schematic | `c105c79ca125469e` |
+| Page `电源原理图` | `1c5eea75209bcc4d` |
+| PCB `Power` | `4081b372105a948c` |
 
 ## API notes (learned while building this)
 
-- `pcb_PrimitiveLine.create` only accepts copper layers; draw the board outline
-  as a **closed polyline** with `pcb_MathPolygon.createPolygon([x, y, 'L', ...])`
-  directly on layer 11. Line segments on layer 11 are rejected, and a line/poly
-  built with the `'R'` polygon shorthand is rejected too.
-- `PCB_Document.autoRouting()` must run against a board with a valid closed
-  outline; with no outline, the job is refused or routes nothing.
-- `autoRouting()` can take longer than a bridge HTTP request, which drops the
-  result. Use `startAutoRouting()` and poll, then `save()`; otherwise the tracks
-  exist only in the canvas and are lost on reload.
-- `pcb_PrimitiveComponent.modify` resets unspecified properties, so pass
-  `x`, `y` and `rotation` together.
-- `createNetLabel()` in the schematic returns `undefined` even when it works;
-  named wires are the reliable route.
+- Draw the board outline as a **closed polyline** of integer mil coordinates:
+  `pcb_MathPolygon.createPolygon([x, y, 'L', ...])` on layer 11. Line
+  primitives on layer 11 are rejected, and non-integer coordinates can be
+  rejected too.
+- `autoRouting()` fails or routes nothing without a valid closed outline; it can
+  also exceed the bridge request timeout. Use `startAutoRouting()` + polling,
+  then `save()`, otherwise the tracks live only in the canvas.
+- `PCB_Document.importChanges(uuid, true)` needs the PCB tab active.
+- Schematic nets are merged when a wire endpoint lands within ~5 units of a
+  wire of another net. Keep at least 150 units between two-pin parts on the same
+  row when using 70/35-unit stubs. This bit us repeatedly: check with a
+  `pins vs wire endpoints` sweep after wiring.
+- EasyEDA keeps a global net-name table. Some names (`VBAT`, `VCC3`, `VCC5`,
+  and later `VBAT_MAIN`, `VCC_3V3`, `VCC_5V`) became bound to GND in this
+  client after a bad import and stay broken across projects. Use fresh names
+  (`VBAT_RAIL`, `VCC3V3`, `VCC5V`) if a named wire resolves to GND.
+- `pcb_PrimitiveComponent.modify` resets unspecified properties: pass `x`, `y`
+  and `rotation` together.
 - Schematic Y grows upward; `pcb_PrimitiveRectangle` height grows downward from
   `topLeftY`.

@@ -9,7 +9,10 @@ uuid = sys.argv[1]
 out = sys.argv[2] if len(sys.argv) > 2 else "/tmp/page.png"
 js = r"""
 const page = '__UUID__';
-const tabId = page + '@f7155a0e0e356c3ee55e5cb5f2ac522bcb1b042d02e0207e74869905c46cecb9';
+await eda.dmt_EditorControl.openDocument(page);
+await new Promise(r => setTimeout(r, 500));
+const doc = await eda.dmt_SelectControl.getCurrentDocumentInfo();
+const tabId = doc && doc.tabId;
 await eda.dmt_EditorControl.openDocument(page);
 await new Promise(r => setTimeout(r, 600));
 await eda.dmt_EditorControl.zoomToAllPrimitives(undefined, tabId);

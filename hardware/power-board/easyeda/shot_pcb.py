@@ -18,8 +18,9 @@ else:
     nav = "await eda.pcb_Document.zoomToBoardOutline();"
 
 js = r"""
-const pcb = 'aa65e6d7e62b98c1';
-const tabId = pcb + '@f7155a0e0e356c3ee55e5cb5f2ac522bcb1b042d02e0207e74869905c46cecb9';
+const pcb = '4081b372105a948c';
+const doc = await eda.dmt_SelectControl.getCurrentDocumentInfo();
+const tabId = doc && doc.tabId;
 await eda.dmt_EditorControl.openDocument(pcb);
 await new Promise(r => setTimeout(r, 600));
 __NAV__

@@ -26,3 +26,5 @@ cmake-build-*/
 
 # Host build for shared protocol tests
 shared/build/
+__pycache__/
+*.pyc

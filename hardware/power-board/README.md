@@ -2,9 +2,10 @@
 
 2S Li-ion input, direct VBAT output, 5 V/3 A, and 3.3 V/3 A rails for the car.
 
-**Status:** schematic and PCB complete in EasyEDA Pro. 4 schematic pages, fully
-routed 2-layer 70 x 50 mm PCB, DRC clean (0 violations). The editable project is
-in [easyeda/car-buddy-power](easyeda/car-buddy-power/).
+**Status:** schematic and PCB complete in EasyEDA Pro. Single-sheet schematic
+(57 components, 24 nets, netlist validated pin by pin), fully routed 2-layer
+70 x 50 mm PCB, DRC clean (0 violations). The editable project is in
+[easyeda/car-buddy-power](easyeda/car-buddy-power/).
 
 ## Inputs and outputs
 
@@ -114,6 +115,13 @@ unless the thermal test in [test-plan.md](test-plan.md) passes with margin.
 - Confirm motor stall current; the fuse is 7.5 A.
 - Widen the VBAT/5 V/3.3 V tracks to the values in `pcb-layout.md` before a
   high-current build (the autorouter used 0.3 mm for power nets).
+
+## Net names
+
+`netlist.csv` is the source of truth. The three internal rail nets carry
+suffixes that avoid a name clash in the EasyEDA project history:
+`VBAT_RAIL` (protected battery rail), `VCC3V3` (U2 VCC/AAM) and `VCC5V`
+(U1 VCC/AAM). BOM and wiring docs still refer to them as VBAT, VCC3/VCC5.
 - Rebuild the copper pours in the EasyEDA GUI before exporting Gerbers.
 - Add a 5 V/3.3 V power-good signal to the STM32 if brownout diagnostics are
   needed.

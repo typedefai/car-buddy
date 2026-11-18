@@ -1,0 +1,96 @@
+{
+  "name": "car-buddy-power-v2",
+  "owner_uuid": "52bddd059a2447af8f1d6d196c75454b",
+  "creator_uuid": "52bddd059a2447af8f1d6d196c75454b",
+  "created_at": "2026-11-18 23:42:53",
+  "updated_at": "2026-11-18 23:42:53",
+  "modifier_uuid": "52bddd059a2447af8f1d6d196c75454b",
+  "content": "2S Li-ion power board (single sheet)",
+  "archive": false,
+  "cbb_project": 0,
+  "thumb": "",
+  "ticket": 1,
+  "g_ticket": 1,
+  "boards": [],
+  "block_symbol_attrs_groups": {},
+  "default_sheet": "8547d9021ffd0929",
+  "branch_uuid": "",
+  "pcb_count": 0,
+  "format": "folder",
+  "profile": {
+    "boards": {
+      "6f6c8462bc68715a": {
+        "uuid": "6f6c8462bc68715a",
+        "title": "car-buddy-power",
+        "zIndex": 1
+      }
+    },
+    "schematics": {
+      "c105c79ca125469e": {
+        "uuid": "c105c79ca125469e",
+        "name": "Schematic1",
+        "board": "6f6c8462bc68715a",
+        "source": "",
+        "version": "1795017653957",
+        "updateTime": 1795017653957
+      }
+    },
+    "sheets": {
+      "1c5eea75209bcc4d": {
+        "uuid": "1c5eea75209bcc4d",
+        "title": "电源原理图",
+        "schematic_uuid": "c105c79ca125469e",
+        "zIndex": 1,
+        "source": "",
+        "version": "1795017653957",
+        "updateTime": 1795017653957
+      }
+    },
+    "pcbs": {
+      "4081b372105a948c": {
+        "uuid": "4081b372105a948c",
+        "title": "PCB1_1",
+        "board": "6f6c8462bc68715a",
+        "parent_uuid": "",
+        "source": "",
+        "version": "1795017601606",
+        "updateTime": 1795017601606
+      }
+    },
+    "panels": {
+      "3ab6db7b8f6faca9": {
+        "uuid": "3ab6db7b8f6faca9",
+        "title": "Panel1",
+        "zIndex": null
+      }
+    },
+    "blockSymbols": {},
+    "owner": {
+      "uuid": "52bddd059a2447af8f1d6d196c75454b"
+    },
+    "simSchematics": {},
+    "simulations": {}
+  },
+  "config": {
+    "defaultSheet": "8547d9021ffd0929",
+    "settings": {
+      "UNIVERSAL": {
+        "dataType": "UNIVERSAL",
+        "data": {
+          "allowLibRename": true,
+          "defaultNetName": true,
+          "wireMultipleNet": true,
+          "netFlagCrossLayerConnection": true,
+          "netLabelCrossPageConnection": true,
+          "busGenerateNetClass": true,
+          "relevanceDisplayRow": "SINGLE",
+          "relevanceBelongSchPage": "NAME",
+          "relevanceLocation": "ZONE",
+          "multipartCrossLayer": true,
+          "nonElectronicAddIntoBom": false,
+          "nonElectronicUpdatePcb": false
+        }
+      }
+    }
+  }
+}

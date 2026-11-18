@@ -6,7 +6,7 @@ import subprocess
 import sys
 from collections import defaultdict
 
-JS = "await eda.dmt_EditorControl.openDocument('8da9c96e54f30398');\nawait new Promise(r => setTimeout(r, 800));\nreturn await eda.sch_Netlist.getNetlist();"
+JS = "await eda.dmt_EditorControl.openDocument('1c5eea75209bcc4d');\nawait new Promise(r => setTimeout(r, 800));\nawait eda.sch_Document.save();\nawait new Promise(r => setTimeout(r, 2500));\nreturn await eda.sch_Netlist.getNetlist();"
 res = subprocess.run([sys.executable, "eda.py"], input=JS, capture_output=True, text=True, timeout=120)
 data = json.loads(res.stdout)
 raw = data.get("result")

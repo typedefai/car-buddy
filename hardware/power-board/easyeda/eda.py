@@ -7,7 +7,7 @@ import urllib.request
 PORT = 49620
 
 
-def run(code: str, timeout: int = 120):
+def run(code: str, timeout: int = 600):
     req = urllib.request.Request(
         f"http://127.0.0.1:{PORT}/execute",
         data=json.dumps({"code": code}).encode(),

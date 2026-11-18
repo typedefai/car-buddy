@@ -85,16 +85,12 @@ const MM = 39.3701;
 const outline = __OUTLINE__;
 const place = __PLACE__;
 const log = [];
+await eda.dmt_EditorControl.openDocument('4081b372105a948c');
+await eda.dmt_EditorControl.waitForDocumentReady('4081b372105a948c', 20000);
+await new Promise(r => setTimeout(r, 600));
 
-// board outline: a closed polyline on the board-outline layer (11)
-const oldLines = await eda.pcb_PrimitiveLine.getAllPrimitiveId();
-if (oldLines.length) await eda.pcb_PrimitiveLine.delete(oldLines);
-const oldPolys = await eda.pcb_PrimitivePolyline.getAllPrimitiveId();
-if (oldPolys.length) await eda.pcb_PrimitivePolyline.delete(oldPolys);
-const p = outline.map(v => v * MM);
-const poly = eda.pcb_MathPolygon.createPolygon([p[0], p[1], 'L', p[2], p[3], p[4], p[5], p[6], p[7], p[0], p[1]]);
-const outlinePrim = await eda.pcb_PrimitivePolyline.create('', 11, poly, 10, false);
-if (!outlinePrim) log.push('outline failed');
+// board outline and mounting holes are drawn by make_outline.py
+const outlinePrim = true;
 
 const ids = await eda.pcb_PrimitiveComponent.getAllPrimitiveId();
 const comps = await eda.pcb_PrimitiveComponent.get(ids);

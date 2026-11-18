@@ -4,9 +4,9 @@ Three-board split for the car:
 
 | Board | Purpose | Status |
 |---|---|---|
-| `power-board/` | 2S Li-ion input, VBAT direct output, 5 V and 3.3 V rails | schematic + PCB complete, DRC clean |
-| `esp32-board/` | ESP32-S3 carrier: OLED, ES7210/ES8311 codec, mic, speaker, RGB LED, UART to STM32 | not started |
-| `stm32-board/` | STM32F103ZET6 carrier: two TB6612FNG, four encoders, UART to ESP32 | wiring defined in `stm32-car-wiring.md`; PCB not started |
+| `power-board/` | 2S Li-ion input, VBAT direct output + 5 V rail (v2) | v2 spec decided, see `DECISIONS.md` D10; EasyEDA revision pending |
+| `esp32-board/` | ESP32-S3 (WROOM-1-N16R8) integrated: OLED, ES7210/ES8311 codec, mic, speaker, RGB LED, UART to STM32 | not started |
+| `stm32-board/` | carrier for 立创·天空星 STM32F407VGT6 core: four AT8236 motor drivers, four encoders, UART to ESP32, expansion headers | core bought; carrier pin map + PCB not started |
 
 ## Power tree
 
@@ -52,6 +52,7 @@ ESP32 <-> STM32 remains a 3-wire UART link (TX, RX, GND) at 3.3 V.
 
 ## Board designs
 
+- [Hardware decisions](DECISIONS.md)
 - [Power board design](power-board/README.md)
 - [Power board schematic](power-board/schematic.md)
 - [Power board BOM](power-board/BOM.csv)

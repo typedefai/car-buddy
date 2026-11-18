@@ -32,16 +32,8 @@ with open("../netlist.csv") as f:
     for row in csv.DictReader(f):
         expected[row["Net"]].add((row["Ref"], row["Pin"]))
 
-# F1 and FH1 are merged on the schematic: F1 is the 5x20 holder
-merged = defaultdict(set)
-for net, pins in expected.items():
-    s = set()
-    for ref, pin in pins:
-        if ref == "FH1":
-            continue
-        s.add((ref, pin))
-    merged[net] |= s
-
+# v2 has no merged/phantom refs; compare directly
+merged = expected
 print(f"components: {len(nl['components'])}, designators: {sorted(r for r in refs if r)}")
 problems = 0
 for net in sorted(set(actual) | set(merged)):

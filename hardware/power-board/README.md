@@ -1,127 +1,102 @@
 # Power board
 
-2S Li-ion input, direct VBAT output, 5 V/3 A, and 3.3 V/3 A rails for the car.
+2S Li-ion input, direct VBAT motor output, two independent 5 V rails, and
+INA219 telemetry for the car.
 
-**Status:** schematic and PCB complete in EasyEDA Pro. Single-sheet schematic
-(57 components, 24 nets, netlist validated pin by pin), fully routed 2-layer
-70 x 50 mm PCB, DRC clean (0 violations). The editable project is in
-[easyeda/car-buddy-power](easyeda/car-buddy-power/).
+**Status:** v2 schematic rebuilt and verified in EasyEDA Pro
+(2026-11-19): one A4 sheet, 8 blocks, 64 components, 32 nets — netlist
+matches `netlist.csv` (0 differences) and the cross-net wire-collision
+check is clean. **The PCB is still the old v1 layout and needs a v2 redo.**
+The editable project is in [easyeda/car-buddy-power](easyeda/car-buddy-power/).
+Screenshot: [schematic-v2.png](schematic-v2.png).
 
 ## Inputs and outputs
 
 | Item | Value |
 |---|---|
-| Battery | 2S Li-ion, 2 x 3.7 V cells, 6.0–8.4 V |
-| Recommended pack | 2S1P 18650 with integrated 2S BMS (10 A, with balancing) |
-| VBAT direct output | 6.0–8.4 V, 10 A class, XT30 + screw terminal |
-| 5 V rail | 5.0 V, 3 A peak / 2 A continuous |
-| 3.3 V rail | 3.27 V, 3 A peak / 2 A continuous |
-| VBAT sense | 0–2.1 V for 6.0–8.4 V, 3-pin header |
-| Board size | 70 x 50 mm, 2-layer, 1.6 mm, 1 oz copper |
+| Battery | 2S Li-ion, 2 x 3.7 V 26650 cells (separate holders), 6.0-8.4 V |
+| Protection | 2S BMS (bought 保护板) at the battery box + box fuse 7.5 A |
+| VBAT motor output | 6.0-8.4 V, 10 A class, XT30, behind its own switch (SW2) |
+| 5 V rail #1 | 5.0 V, 3 A, JST-XH -> ESP32 board (U1) |
+| 5 V rail #2 | 5.0 V, 3 A, JST-XH -> STM32 carrier (U2) |
+| Telemetry | INA219 (0.01 ohm shunt): VBAT + total current over I2C, 3-pin JST-XH |
+| Board size | 10x10 cm budget; v2 PCB not laid out yet |
 
 ## Architecture
 
 ```text
 J1 XT30 (2S pack)
-  -> F1 5x20 fuse holder (7.5 A slow-blow)
-  -> SW1 KCD1-101 power switch
-  -> Q1 SI4435 reverse-polarity P-FET
-  -> VBAT
-       -> D1 SMBJ12A TVS
-       -> C1 470 uF + C12 100 nF
-       -> J5 XT30 (motors / TB6612 VM)
-       -> J6 5.08 mm terminal (aux VBAT)
-       -> U1 MP2315 5 V / 3 A -> J3 5 V
-       -> U2 MP2315 3.3 V / 3 A -> J4 3.3 V
-       -> R5/R6 divider -> J7 VBAT_SENSE
+  -> F1 ATO blade fuse (7.5 A slow-blow)
+  -> SW1 KCD1-105 main switch
+  -> Q1 AOD409 reverse-polarity P-FET (+ RC soft start)
+  -> VBAT_RAIL
+       -> RSH 0.01 ohm -> VBAT_LOAD
+            -> D1 SMBJ12A TVS + C1 470 uF + 100 nF + 1 uF
+            -> SW2 motor switch -> J5 XT30 (motors)
+            -> FB1 -> U1 MP2315 5 V #1 -> FB3 -> J3 (ESP32 board)
+            -> FB2 -> U2 MP2315 5 V #2 -> FB4 -> J4 (STM32 carrier)
+            -> U4 INA219 (IN+ = battery side) -> J7 I2C
+            -> U1 5V1 -> U3 ME6211 3.3 V -> powers U4
        -> D2/D3/D4 power LEDs
 ```
 
 Detailed connections: [schematic.md](schematic.md) and
-[netlist.csv](netlist.csv). The EasyEDA netlist was validated against
-`netlist.csv` pin by pin (24 nets, 57 components).
+[netlist.csv](netlist.csv).
 
 ## Why these choices
 
-- **2S BMS is external, inside the pack.** It provides overcharge,
-  over-discharge, over-current, short-circuit, and balancing protection.
-  Building a BMS on this board would add a dedicated charger and safety
-  certification work; the first prototype should use a protected pack.
-- **Two buck converters from VBAT.** 5 V and 3.3 V are generated independently
-  so the 3.3 V rail does not dissipate the 5 V-to-3.3 V drop in an LDO. Each
-  rail uses an MP2315 (4.5–24 V in, 3 A, 500 kHz, internal compensation).
-- **Direct VBAT output** is the motor rail. The TB6612FNG VM accepts 2.5–13.5 V;
-  the 2S pack stays within that range. Motor noise is isolated from the buck
-  inputs by the fuse, switch, TVS, and bulk capacitor.
-- **No on-board charger.** Charge the protected pack with a proper 2S Li-ion
-  charger. Do not charge through the board.
+- **Two independent 5 V bucks.** The ESP32 board's speaker amp is a
+  switching noise source; a dedicated buck per board keeps it off the
+  STM32 logic supply and gives each board its own fault domain.
+- **INA219 replaces the analog VBAT divider.** One part gives pack voltage
+  (for the STM32 PWM clamp), total current (stall detection), and battery
+  telemetry for the server UI.
+- **AOD409 instead of SI4435.** ~8 mOhm vs ~20 mOhm keeps the reverse
+  polarity FET cool at 10 A stall current (1 W vs 2 W).
+- **Two switches.** The motor rail cuts independently so bench work keeps
+  logic alive with wheels physically dead.
+- **No 3.3 V distribution.** Every consumer board regulates its own 3.3 V
+  (天空星 LDO, STM32 carrier LDO, ESP32 board buck); the power board's own
+  ME6211 only feeds the INA219.
+- **2S BMS is external, bought.** Over-discharge/over-current/short
+  protection lives at the battery box, independent of firmware.
 
-## Load budget
+## Safety
 
-| Load | Rail | Typical | Peak |
-|---|---|---|---|
-| ESP32-S3 board | 5 V | 0.25 A | 0.50 A |
-| Speaker amplifier (3 W) | 5 V | 0.20 A | 0.80 A |
-| STM32 board | 5 V | 0.10 A | 0.20 A |
-| Sensors/logic | 3.3 V | 0.20 A | 0.50 A |
-| **5 V total** | | **~0.55 A** | **~1.5 A** |
-| **3.3 V total** | | **~0.20 A** | **~0.5 A** |
-
-The 3 A buck rating is a peak rating; keep each rail below **2 A continuous**
-unless the thermal test in [test-plan.md](test-plan.md) passes with margin.
-
-## Protection and safety
-
-- **F1 5x20 fuse holder** with a 7.5 A slow-blow fuse protects the battery
-  wiring and board traces.
-- **SW1 KCD1-101** is the main power switch and carries the full load.
-- **Q1 SI4435** blocks reverse battery polarity. Drain to the battery side,
-  source to VBAT, gate pulled to GND through 100 k, 12 V gate-source zener.
-- **D1 SMBJ12A** clamps motor/inductive transients on VBAT.
-- **C1 470 uF** bulk capacitor absorbs motor current steps.
-- **TB6612 STBY pulldowns** (on the STM32 board) keep the motors off at reset.
-- **Hardware motor-power cut**: the battery switch/fuse is independent of
-  firmware. Keep it accessible.
-- Never connect unprotected cells. Never short VBAT to GND. Use a current-limited
-  bench supply for first power-up.
+- Fuse at the battery box (before the cable run) + board fuse: double
+  protection for the high-capacity cells.
+- Battery cells are charged individually in an external slot charger; no
+  on-board charging, no balance lead in the car.
+- Hardware motor-power cut: SW2 + the battery fuse are independent of
+  firmware.
+- Never connect unprotected Li-ion cells. Never short VBAT to GND.
 
 ## Connectors
 
 | Ref | Connector | Pinout |
 |---|---|---|
-| J1 | XT30PW-M | 1 = VBAT_BMS+, 2 = GND |
-| J3 | JST-XH 2-pin | 1 = 5 V, 2 = GND |
-| J4 | JST-XH 2-pin | 1 = 3.3 V, 2 = GND |
-| J5 | XT30PW-F | 1 = VBAT, 2 = GND, 3/4 = shield tabs to GND |
-| J6 | 5.08 mm 2-pin terminal | 1 = VBAT, 2 = GND |
-| J7 | JST-XH 3-pin | 1 = VBAT_SENSE, 2 = GND, 3 = 3.3 V |
-| SW1 | KCD1-101 rocker | series with VBAT |
-| F1 | 5x20 fuse holder | 7.5 A slow-blow |
-| TP1–TP5 | test points | VBAT, 5 V, 3.3 V, GND, VBAT_SENSE |
-| H1, H2 | 3.2 mm NPTH | M3 mounting holes, bottom corners |
+| J1 | XT30PW-M | 1 = VBAT_BMS, 2 = GND |
+| J3 | JST-XH 2-pin | 1 = 5V1, 2 = GND (ESP32 board) |
+| J4 | JST-XH 2-pin | 1 = 5V2, 2 = GND (STM32 carrier) |
+| J5 | XT30PW-F | 1 = VBAT_MOTOR, 2/3/4 = GND (shield tabs) |
+| J7 | JST-XH 3-pin | 1 = SDA, 2 = SCL, 3 = GND (pull-ups on carrier) |
+| SW1 | KCD1-105 rocker | main power, series with VBAT |
+| SW2 | KCD1-105 rocker | motor rail cut |
+| F1 | ATO blade holder | 7.5 A slow-blow |
+| TP1-TP4 | test points | VBAT, 5V1, 5V2, GND |
 
 ## Files
 
-- [schematic.md](schematic.md) — block diagram and detailed buck connections
+- [schematic.md](schematic.md) — v2 block diagram and detailed connections
+- [schematic-v2.png](schematic-v2.png) — screenshot of the v2 sheet
 - [BOM.csv](BOM.csv) — bill of materials with LCSC codes
 - [netlist.csv](netlist.csv) — net-to-pin list (matches the EasyEDA netlist)
-- [pcb-layout.md](pcb-layout.md) — stackup, placement, trace widths
-- [test-plan.md](test-plan.md) — bring-up and load tests
 - [easyeda/README.md](easyeda/README.md) — EasyEDA project, scripts and IDs
 
 ## Open items
 
-- Confirm the actual 2S pack/BMS connector and cell holder.
-- Confirm motor stall current; the fuse is 7.5 A.
-- Widen the VBAT/5 V/3.3 V tracks to the values in `pcb-layout.md` before a
-  high-current build (the autorouter used 0.3 mm for power nets).
-
-## Net names
-
-`netlist.csv` is the source of truth. The three internal rail nets carry
-suffixes that avoid a name clash in the EasyEDA project history:
-`VBAT_RAIL` (protected battery rail), `VCC3V3` (U2 VCC/AAM) and `VCC5V`
-(U1 VCC/AAM). BOM and wiring docs still refer to them as VBAT, VCC3/VCC5.
-- Rebuild the copper pours in the EasyEDA GUI before exporting Gerbers.
-- Add a 5 V/3.3 V power-good signal to the STM32 if brownout diagnostics are
-  needed.
+- **PCB redo** for v2: new outline/placement/routing per D10 (VBAT >= 3 mm
+  + pours), then DRC and the test plan.
+- Measure stall current on the bench to confirm the 7.5 A fuse and the
+  AT8236 VREF limit (see DECISIONS.md open questions).
+- Update `pcb-layout.md` and `test-plan.md` for the v2 board.

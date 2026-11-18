@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Build the car-buddy power board schematic as a single A4 sheet (chunked).
+"""Build the car-buddy power board v2 schematic as a single A4 sheet (chunked).
+
+v2 changes (DECISIONS.md D10):
+  - two independent MP2315 5 V bucks (one per board), ferrite beads on
+    buck inputs and outputs
+  - INA219 (0.01 ohm shunt) on the VBAT rail + local ME6211 3.3 V LDO
+  - AOD409 reverse-polarity FET with gate RC soft-start
+  - KCD1-105 switches (main + motor rail), ATO blade fuse holder
+  - 3.3 V rail and analog VBAT sense divider removed
 
 The API bridge times out long requests, so the build runs in small steps:
 
@@ -18,7 +26,7 @@ LIB = "0819f05c4eef4c71ace90d822a990e87"
 
 DEV = {
     "mp2315": "27894aca5e23483b838e3b1bd3bf7590",
-    "pmos": "7c52ab1755c74dfab8dcfea791efaa07",
+    "aod409": "bb3fd640aa0245798b054c61559572fe",
     "smbj": "59d609d2ea974f2482a79ad6fb674a03",
     "zener": "0c0ebb187db1495c8c312868a9c5dc28",
     "led": "4c45f846f1a545b08ece52c21937d189",
@@ -31,10 +39,13 @@ DEV = {
     "xt30f": "d509f016e0cd44b293d3976f0f428b3f",
     "xh2": "9d6335493fbd4851a2660c73a83aaa3e",
     "xh3": "acc8d8d34b314ee6bca836357a21f749",
-    "kf2": "68420db33e68408b961041bd5eec5ead",
-    "kcd1": "9a168e62d2b147e3a4b67775a8fedf5e",
+    "kcd105": "bff339f70f414e04b1c7e185dbf08032",
+    "fuse_ato": "b90d9e73f32442c48b2f0a8471b01d40",
+    "bead": "6e8e85fe54824e3ea431634e6a431c52",
+    "ina219": "a63fabcf95d444249a9369156a828811",
+    "me6211": "0cc0998dfe244d129b1deee194b6604c",
+    "shunt": "d54de329b2464863be62dda8d6f9a69c",
     "tp": "cf8b789614c04ee491fd17b89f81a8ab",
-    "fuseh": "8d258f8faaa9435884a59c72c25dba1a",
 }
 
 
@@ -49,89 +60,100 @@ def P(ref, dev, val, x, y, pins=None, buses=None, rot=0):
 
 PAGE = {
     "uuid": "1c5eea75209bcc4d",
-    "title": "车载小车电源板 - 2S 锂电池输入, VBAT / 5V / 3.3V 输出",
+    "title": "车载小车电源板 v2 - 2S 锂电输入 / VBAT 电机轨 / 双路 5V / INA219 遥测",
     "parts": [
-        # --- battery input and reverse protection (top) ---
+        # --- 电池输入 (block 1) ---
         P("J1", "xt30m", "XT30PW-M", 120, 740, {"1": "VBAT_BMS", "2": "GND"}),
-        P("F1", "fuseh", "5x20 holder", 280, 740, {"1": "VBAT_BMS", "2": "VBAT_FUSED"}),
-        P("SW1", "kcd1", "KCD1-101", 450, 740, {"1": "VBAT_FUSED", "2": "VBAT_SW"}),
-        P("Q1", "pmos", "SI4435", 630, 735,
-          {"4": "Q1_G"},
-          [{"pins": ["1", "2", "3"], "net": "VBAT_RAIL", "len": 35},
-           {"pins": ["5", "6", "7", "8"], "net": "VBAT_SW", "len": 35}]),
-        P("R10", "res", "100k 1%", 770, 765, {"1": "Q1_G", "2": "GND"}),
-        P("D5", "zener", "BZX84C12", 770, 700, {"1": "Q1_G", "3": "VBAT_RAIL"}),
-        P("C18", "cap0603", "100nF", 890, 740, {"1": "Q1_G", "2": "VBAT_RAIL"}),
-        # --- VBAT clamp ---
-        P("D1", "smbj", "SMBJ12A", 120, 630, {"1": "VBAT_RAIL", "2": "GND"}),
-        P("C1", "cap470", "470uF 16V", 280, 630, {"1": "VBAT_RAIL", "2": "GND"}),
-        P("C12", "cap0603", "100nF", 440, 630, {"1": "VBAT_RAIL", "2": "GND"}),
-        # --- 3.3 V buck (U2) ---
-        P("U2", "mp2315", "MP2315", 170, 515,
-          {"1": "VCC3V3", "2": "VBAT_RAIL", "3": "SW3", "4": "GND",
-           "5": "BST3", "6": "EN3", "7": "VCC3V3", "8": "FB3"}),
-        P("C7", "cap1206", "10uF 25V", 330, 560, {"1": "VBAT_RAIL", "2": "GND"}),
-        P("C8", "cap1206", "10uF 25V", 480, 560, {"1": "VBAT_RAIL", "2": "GND"}),
-        P("C14", "cap0603", "100nF", 630, 560, {"1": "SW3", "2": "BST3_R"}),
-        P("R12", "res", "20R 1%", 780, 560, {"1": "BST3_R", "2": "BST3"}),
-        P("C16", "cap0603", "100nF", 930, 560, {"1": "VCC3V3", "2": "GND"}),
-        P("R14", "res", "100k 1%", 1080, 560, {"1": "VBAT_RAIL", "2": "EN3"}),
-        P("C20", "cap0603", "100pF", 170, 470, {"1": "3V3", "2": "FB3"}),
-        P("L2", "ind", "4.7uH", 330, 470, {"1": "SW3", "2": "3V3"}),
-        P("C9", "cap1206", "22uF 10V", 480, 470, {"1": "3V3", "2": "GND"}),
-        P("C10", "cap1206", "22uF 10V", 630, 470, {"1": "3V3", "2": "GND"}),
-        P("C11", "cap0603", "100nF", 780, 470, {"1": "3V3", "2": "GND"}),
-        P("R3", "res", "100k 1%", 930, 470, {"1": "3V3", "2": "FB3"}),
-        P("R4", "res", "32.4k 1%", 1080, 470, {"1": "FB3", "2": "GND"}),
-        # --- 5 V buck (U1) ---
-        P("U1", "mp2315", "MP2315", 170, 355,
-          {"1": "VCC5V", "2": "VBAT_RAIL", "3": "SW5", "4": "GND",
-           "5": "BST5", "6": "EN5", "7": "VCC5V", "8": "FB5"}),
-        P("C2", "cap1206", "10uF 25V", 330, 400, {"1": "VBAT_RAIL", "2": "GND"}),
-        P("C3", "cap1206", "10uF 25V", 480, 400, {"1": "VBAT_RAIL", "2": "GND"}),
-        P("C13", "cap0603", "100nF", 630, 400, {"1": "SW5", "2": "BST5_R"}),
-        P("R11", "res", "20R 1%", 780, 400, {"1": "BST5_R", "2": "BST5"}),
-        P("C15", "cap0603", "100nF", 930, 400, {"1": "VCC5V", "2": "GND"}),
-        P("R13", "res", "100k 1%", 1080, 400, {"1": "VBAT_RAIL", "2": "EN5"}),
-        P("C19", "cap0603", "100pF", 170, 310, {"1": "5V", "2": "FB5"}),
-        P("L1", "ind", "4.7uH", 330, 310, {"1": "SW5", "2": "5V"}),
-        P("C4", "cap1206", "22uF 10V", 480, 310, {"1": "5V", "2": "GND"}),
-        P("C5", "cap1206", "22uF 10V", 630, 310, {"1": "5V", "2": "GND"}),
-        P("C6", "cap0603", "100nF", 780, 310, {"1": "5V", "2": "GND"}),
-        P("R1", "res", "100k 1%", 930, 310, {"1": "5V", "2": "FB5"}),
-        P("R2", "res", "19.1k 1%", 1080, 310, {"1": "FB5", "2": "GND"}),
-        # --- connectors ---
-        P("J3", "xh2", "XH-2P 5V", 110, 250, {"1": "5V", "2": "GND"}),
-        P("J4", "xh2", "XH-2P 3V3", 270, 250, {"1": "3V3", "2": "GND"}),
-        P("J7", "xh3", "XH-3P", 440, 255, {"1": "VBAT_SENSE", "2": "GND", "3": "3V3"}),
-        P("J5", "xt30f", "XT30PW-F", 600, 245,
-          {"1": "VBAT_RAIL", "2": "GND", "3": "GND", "4": "GND"}),
-        P("J6", "kf2", "KF2EDGK", 800, 250, {"1": "VBAT_RAIL", "2": "GND"}),
-        # --- indicators ---
-        P("D2", "led", "Green", 90, 200, {"1": "VBAT_RAIL", "2": "LED_VBAT"}),
-        P("R7", "res", "2.2k 1%", 300, 200, {"1": "LED_VBAT", "2": "GND"}),
-        P("D3", "led", "Green", 510, 200, {"1": "5V", "2": "LED_5V"}),
-        P("R8", "res", "1k 1%", 720, 200, {"1": "LED_5V", "2": "GND"}),
-        P("D4", "led", "Green", 930, 200, {"1": "3V3", "2": "LED_3V3"}),
-        # --- VBAT sense divider ---
-        P("R9", "res", "1k 1%", 90, 150, {"1": "LED_3V3", "2": "GND"}),
-        P("R5", "res", "100k 1%", 300, 150, {"1": "VBAT_RAIL", "2": "VBAT_SENSE"}),
-        P("R6", "res", "33k 1%", 510, 150, {"1": "VBAT_SENSE", "2": "GND"}),
-        # --- filter and test points ---
-        P("C17", "cap0603", "100nF", 90, 100, {"1": "VBAT_SENSE", "2": "GND"}),
-        P("TP1", "tp", "TP", 300, 100, {"1": "VBAT_RAIL"}),
-        P("TP2", "tp", "TP", 510, 100, {"1": "5V"}),
-        P("TP3", "tp", "TP", 90, 50, {"1": "3V3"}),
-        P("TP4", "tp", "TP", 300, 50, {"1": "GND"}),
-        P("TP5", "tp", "TP", 510, 50, {"1": "VBAT_SENSE"}),
+        P("F1", "fuse_ato", "ATO blade 7.5A", 300, 740, {"1": "VBAT_BMS", "2": "VBAT_FUSED"}),
+        P("SW1", "kcd105", "KCD1-105", 480, 740, {"1": "VBAT_FUSED", "2": "VBAT_SW"}),
+        # --- 防反接与软启动 (block 2) ---
+        P("Q1", "aod409", "AOD409", 630, 735,
+          {"1": "Q1_G", "2": "VBAT_SW", "3": "VBAT_RAIL"}),
+        P("R10", "res", "100k 1%", 790, 765, {"1": "Q1_G", "2": "GND"}),
+        P("D5", "zener", "BZX84C12", 790, 715, {"1": "Q1_G", "3": "VBAT_RAIL"}),
+        P("C18", "cap0603", "100nF", 920, 735, {"1": "Q1_G", "2": "VBAT_RAIL"}),
+        # --- VBAT 母线 (block 3) ---
+        P("D1", "smbj", "SMBJ12A", 120, 630, {"1": "VBAT_LOAD", "2": "GND"}),
+        P("C1", "cap470", "470uF 16V", 270, 630, {"1": "VBAT_LOAD", "2": "GND"}),
+        P("C12", "cap0603", "100nF", 420, 630, {"1": "VBAT_LOAD", "2": "GND"}),
+        P("C21", "cap0603", "1uF 25V", 540, 630, {"1": "VBAT_LOAD", "2": "GND"}),
+        # --- 电机轨开关与输出 (block 4) ---
+        P("SW2", "kcd105", "KCD1-105", 750, 630, {"1": "VBAT_LOAD", "2": "VBAT_MOTOR"}),
+        P("J5", "xt30f", "XT30PW-F", 930, 625,
+          {"1": "VBAT_MOTOR", "2": "GND", "3": "GND", "4": "GND"}),
+        # --- 5V buck #1 -> ESP32 (block 5) ---
+        P("FB1", "bead", "600R 0805", 120, 560, {"1": "VBAT_LOAD", "2": "VBAT_B1"}),
+        P("U1", "mp2315", "MP2315", 270, 515,
+          {"1": "VCC5V1", "2": "VBAT_B1", "3": "SW5_1", "4": "GND",
+           "5": "BST5_1", "6": "EN5_1", "7": "VCC5V1", "8": "FB5_1"}),
+        P("C2", "cap1206", "10uF 25V", 420, 560, {"1": "VBAT_B1", "2": "GND"}),
+        P("C3", "cap1206", "10uF 25V", 570, 560, {"1": "VBAT_B1", "2": "GND"}),
+        P("C13", "cap0603", "100nF", 720, 560, {"1": "SW5_1", "2": "BST5_1R"}),
+        P("R11", "res", "20R 1%", 870, 560, {"1": "BST5_1R", "2": "BST5_1"}),
+        P("C15", "cap0603", "100nF", 1020, 560, {"1": "VCC5V1", "2": "GND"}),
+        P("R13", "res", "100k 1%", 110, 540, {"1": "VBAT_LOAD", "2": "EN5_1"}),
+        P("C19", "cap0603", "100pF", 120, 470, {"1": "5V1", "2": "FB5_1"}),
+        P("L1", "ind", "4.7uH", 270, 470, {"1": "SW5_1", "2": "5V1"}),
+        P("C4", "cap1206", "22uF 10V", 420, 470, {"1": "5V1", "2": "GND"}),
+        P("C5", "cap1206", "22uF 10V", 570, 470, {"1": "5V1", "2": "GND"}),
+        P("C6", "cap0603", "100nF", 720, 470, {"1": "5V1", "2": "GND"}),
+        P("R1", "res", "100k 1%", 870, 470, {"1": "5V1", "2": "FB5_1"}),
+        P("R2", "res", "19.1k 1%", 1020, 470, {"1": "FB5_1", "2": "GND"}),
+        P("FB3", "bead", "600R 0805", 120, 420, {"1": "5V1", "2": "5V1_OUT"}),
+        P("J3", "xh2", "XH-2P 5V1", 270, 420, {"1": "5V1_OUT", "2": "GND"}),
+        # --- 5V buck #2 -> STM32 carrier (block 6) ---
+        P("FB2", "bead", "600R 0805", 120, 400, {"1": "VBAT_LOAD", "2": "VBAT_B2"}),
+        P("U2", "mp2315", "MP2315", 270, 355,
+          {"1": "VCC5V2", "2": "VBAT_B2", "3": "SW5_2", "4": "GND",
+           "5": "BST5_2", "6": "EN5_2", "7": "VCC5V2", "8": "FB5_2"}),
+        P("C7", "cap1206", "10uF 25V", 420, 400, {"1": "VBAT_B2", "2": "GND"}),
+        P("C8", "cap1206", "10uF 25V", 570, 400, {"1": "VBAT_B2", "2": "GND"}),
+        P("C14", "cap0603", "100nF", 720, 400, {"1": "SW5_2", "2": "BST5_2R"}),
+        P("R12", "res", "20R 1%", 870, 400, {"1": "BST5_2R", "2": "BST5_2"}),
+        P("C16", "cap0603", "100nF", 1020, 400, {"1": "VCC5V2", "2": "GND"}),
+        P("R14", "res", "100k 1%", 110, 390, {"1": "VBAT_LOAD", "2": "EN5_2"}),
+        P("C20", "cap0603", "100pF", 120, 310, {"1": "5V2", "2": "FB5_2"}),
+        P("L2", "ind", "4.7uH", 270, 310, {"1": "SW5_2", "2": "5V2"}),
+        P("C9", "cap1206", "22uF 10V", 420, 310, {"1": "5V2", "2": "GND"}),
+        P("C10", "cap1206", "22uF 10V", 570, 310, {"1": "5V2", "2": "GND"}),
+        P("C11", "cap0603", "100nF", 720, 310, {"1": "5V2", "2": "GND"}),
+        P("R3", "res", "100k 1%", 870, 310, {"1": "5V2", "2": "FB5_2"}),
+        P("R4", "res", "19.1k 1%", 1020, 310, {"1": "FB5_2", "2": "GND"}),
+        P("FB4", "bead", "600R 0805", 120, 260, {"1": "5V2", "2": "5V2_OUT"}),
+        P("J4", "xh2", "XH-2P 5V2", 270, 260, {"1": "5V2_OUT", "2": "GND"}),
+        # --- INA219 + local 3.3V LDO (block 7) ---
+        P("RSH", "shunt", "0.01R 3W", 120, 200, {"1": "VBAT_RAIL", "2": "VBAT_LOAD"}),
+        P("U4", "ina219", "INA219BIDR", 270, 180,
+          {"1": "GND", "2": "GND", "3": "INA_SDA", "4": "INA_SCL",
+           "5": "3V3I", "6": "GND", "7": "VBAT_LOAD", "8": "VBAT_RAIL"}),
+        P("U3", "me6211", "ME6211C33", 470, 200,
+          {"1": "5V1", "2": "GND", "3": "5V1", "5": "3V3I"}),
+        P("C22", "cap0603", "1uF 16V", 620, 200, {"1": "5V1", "2": "GND"}),
+        P("C23", "cap0603", "1uF 16V", 770, 200, {"1": "3V3I", "2": "GND"}),
+        P("C24", "cap0603", "100nF", 920, 200, {"1": "3V3I", "2": "GND"}),
+        P("J7", "xh3", "XH-3P I2C", 1070, 200,
+          {"1": "INA_SDA", "2": "INA_SCL", "3": "GND"}),
+        # --- 指示与测试点 (block 8) ---
+        P("D2", "led", "Green", 120, 100, {"1": "VBAT_LOAD", "2": "LED_VBAT"}),
+        P("R7", "res", "2.2k 1%", 270, 100, {"1": "LED_VBAT", "2": "GND"}),
+        P("D3", "led", "Green", 420, 100, {"1": "5V1", "2": "LED_5V1"}),
+        P("R8", "res", "1k 1%", 570, 100, {"1": "LED_5V1", "2": "GND"}),
+        P("D4", "led", "Green", 720, 100, {"1": "5V2", "2": "LED_5V2"}),
+        P("R9", "res", "1k 1%", 870, 100, {"1": "LED_5V2", "2": "GND"}),
+        P("TP1", "tp", "TP", 120, 50, {"1": "VBAT_LOAD"}),
+        P("TP2", "tp", "TP", 270, 50, {"1": "5V1"}),
+        P("TP3", "tp", "TP", 420, 50, {"1": "5V2"}),
+        P("TP4", "tp", "TP", 570, 50, {"1": "GND"}),
     ],
     "boxes": [
-        {"x": 60, "y": 790, "w": 470, "h": 90, "label": "电池输入"},
-        {"x": 560, "y": 800, "w": 400, "h": 140, "label": "防反接保护"},
-        {"x": 60, "y": 680, "w": 360, "h": 80, "label": "VBAT 钳位与储能"},
-        {"x": 60, "y": 590, "w": 1060, "h": 150, "label": "3.3V / 3A 降压电路 (U2)"},
-        {"x": 60, "y": 430, "w": 1060, "h": 140, "label": "5V / 3A 降压电路 (U1)"},
-        {"x": 60, "y": 280, "w": 1020, "h": 250, "label": "接口、指示与采样"},
+        {"x": 60, "y": 790, "w": 470, "h": 70, "label": "电池输入"},
+        {"x": 540, "y": 800, "w": 450, "h": 110, "label": "防反接与软启动 (AOD409)"},
+        {"x": 60, "y": 680, "w": 540, "h": 60, "label": "VBAT 钳位与储能"},
+        {"x": 620, "y": 690, "w": 480, "h": 80, "label": "电机轨开关与输出"},
+        {"x": 60, "y": 580, "w": 1120, "h": 170, "label": "5V / 3A 降压 #1 → ESP32 板 (U1)"},
+        {"x": 60, "y": 410, "w": 1120, "h": 160, "label": "5V / 3A 降压 #2 → STM32 底板 (U2)"},
+        {"x": 60, "y": 225, "w": 1120, "h": 90, "label": "电流遥测 (INA219) + 本地 3.3V LDO"},
+        {"x": 60, "y": 130, "w": 900, "h": 95, "label": "指示与测试点"},
     ],
 }
 
@@ -183,7 +205,7 @@ for (const p of P.parts.slice(a, b)) {
     const pin = byN[num];
     if (!pin) { log.push('missing pin ' + p.ref + '.' + num); continue; }
     const [dx, dy] = dir(pin.rotation);
-    const L = pin.rotation === 180 ? 70 : 35;
+    const L = pin.rotation === 180 ? 30 : 35;
     const w = await eda.sch_PrimitiveWire.create([pin.x, pin.y, pin.x + dx * L, pin.y + dy * L], net);
     if (!w) log.push('FAIL wire ' + p.ref + '.' + num); else wires++;
   }
@@ -253,25 +275,6 @@ return { wires: ids.length, ids };
                 js = COMMON + "await openPage(); return await eda.sch_PrimitiveWire.delete(%s);" % json.dumps(chunk)
                 js = js.replace("__PAGE__", json.dumps(base)).replace("__LIB__", LIB)
                 print("deleted", i, run(js))
-    elif mode == "move":
-        a, b = int(args[1]), int(args[2])
-        js = (COMMON + r"""
-await openPage();
-const comps = await eda.sch_PrimitiveComponent.get(await eda.sch_PrimitiveComponent.getAllPrimitiveId());
-const byRef = {};
-for (const c of comps) byRef[c.designator] = c;
-const log = [];
-let n = 0;
-for (const p of P.parts.slice(__A__, __B__)) {
-  const c = byRef[p.ref];
-  if (!c) { log.push('missing ' + p.ref); continue; }
-  await eda.sch_PrimitiveComponent.modify(c.primitiveId, { x: p.x, y: p.y, rotation: p.rot || 0 });
-  n++;
-}
-return { moved: n, log };
-""").replace("__A__", str(a)).replace("__B__", str(b))
-        js = js.replace("__PAGE__", json.dumps(base)).replace("__LIB__", LIB)
-        print(run(js))
     elif mode == "place":
         a, b = int(args[1]), int(args[2])
         js = PLACE.replace("__A__", str(a)).replace("__B__", str(b))
@@ -289,7 +292,7 @@ const t = await eda.sch_PrimitiveText.getAllPrimitiveId();
 if (t.length) await eda.sch_PrimitiveText.delete(t);
 const r = await eda.sch_PrimitiveRectangle.getAllPrimitiveId();
 if (r.length) await eda.sch_PrimitiveRectangle.delete(r);
-await eda.sch_PrimitiveText.create(60, 810, P.title, 0, null, null, 18, true, false, false, 1);
+await eda.sch_PrimitiveText.create(60, 830, P.title, 0, null, null, 18, true, false, false, 1);
 for (const b of P.boxes) {
   await eda.sch_PrimitiveRectangle.create(b.x, b.y, b.w, b.h, 0, 0, '#B0B0B0', null, 1, 1, null);
   await eda.sch_PrimitiveText.create(b.x + 8, b.y - 8, b.label, 0, '#666666', null, 12, false, false, false, 1);

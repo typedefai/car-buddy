@@ -1,58 +1,66 @@
 Ref,Qty,Value / Part,Package,Manufacturer PN,LCSC,Notes
-U1,1,MP2315 5V buck,TSOT-23-8,MP2315GJ-Z,C45889,5.0V 3A synchronous buck
-U2,1,MP2315 3.3V buck,TSOT-23-8,MP2315GJ-Z,C45889,3.27V 3A synchronous buck
-Q1,1,P-MOSFET -30V -11A,SO-8,SI4435DY-T1-GE3-HX,C18212772,Reverse-polarity protection
-F1,1,5x20 fuse holder,TH,FUSE-TH_BF013,C9900020280,Holds a 7.5 A slow-blow 5x20 fuse
-SW1,1,Rocker switch 10A,TH,KCD1-101,C9900022451,Main power switch
-D1,1,TVS 12V,SMB,SMBJ12A,C356757,VBAT transient clamp
+U1,1,MP2315 5V buck #1,TSOT-23-8,MP2315GJ-Z,C45889,5.0V 3A -> ESP32 board
+U2,1,MP2315 5V buck #2,TSOT-23-8,MP2315GJ-Z,C45889,5.0V 3A -> STM32 carrier
+Q1,1,P-MOSFET -40V -34A,TO-252,AOD409,C2874627,Reverse-polarity protection (D=bat S=load)
+F1,1,ATO blade fuse holder,TH,汽车中号保险丝座,C9900014676,Holds a 7.5 A slow-blow blade fuse
+FUSE,1,Blade fuse 7.5A slow-blow,中号 ATO,Automotive blade,-,Insert into F1; verify with stall test
+SW1,1,Rocker switch 15A,KCD1-105,KCD1-105-3P,C6917312,Main power switch (pin 3 lamp NC)
+SW2,1,Rocker switch 15A,KCD1-105,KCD1-105-3P,C6917312,Motor rail switch (pin 3 lamp NC)
+D1,1,TVS 12V,SMB,SMBJ12A,C356757,VBAT transient clamp (12V standoff > 8.4V full charge)
 D2,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,VBAT indicator
-D3,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,5V indicator
-D4,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,3V3 indicator
+D3,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,5V1 indicator
+D4,1,Green LED 0603,LED-SMD,YLS191/LW/21/06-B6-C,C9900001042,5V2 indicator
 D5,1,Zener 12V,SOT-23,BZX84C12,C499794,Q1 gate-source clamp
-L1,1,4.7uH 5A inductor,5x5mm SMD,SRN5040-4R7M,C2041710,5V buck
-L2,1,4.7uH 5A inductor,5x5mm SMD,SRN5040-4R7M,C2041710,3.3V buck
+L1,1,4.7uH 5A inductor,5x5mm SMD,SRN5040-4R7M,C2041710,5V buck #1
+L2,1,4.7uH 5A inductor,5x5mm SMD,SRN5040-4R7M,C2041710,5V buck #2
 C1,1,470uF 16V electrolytic,SMD 8x8.3,16V470UF,C9900014916,VBAT bulk
 C2,1,10uF 25V X7R,1206,Generic ceramic,-,U1 input
 C3,1,10uF 25V X7R,1206,Generic ceramic,-,U1 input
 C4,1,22uF 10V X7R,1206,Generic ceramic,-,U1 output
 C5,1,22uF 10V X7R,1206,Generic ceramic,-,U1 output
-C6,1,100nF 50V X7R,0603,Generic ceramic,-,U1 output
+C6,1,100nF 50V X7R,0603,Generic ceramic,-,U1 output HF
 C7,1,10uF 25V X7R,1206,Generic ceramic,-,U2 input
 C8,1,10uF 25V X7R,1206,Generic ceramic,-,U2 input
 C9,1,22uF 10V X7R,1206,Generic ceramic,-,U2 output
 C10,1,22uF 10V X7R,1206,Generic ceramic,-,U2 output
-C11,1,100nF 50V X7R,0603,Generic ceramic,-,U2 output
+C11,1,100nF 50V X7R,0603,Generic ceramic,-,U2 output HF
 C12,1,100nF 50V X7R,0603,Generic ceramic,-,VBAT HF bypass
 C13,1,100nF 50V X7R,0603,Generic ceramic,-,U1 bootstrap
 C14,1,100nF 50V X7R,0603,Generic ceramic,-,U2 bootstrap
 C15,1,100nF 50V X7R,0603,Generic ceramic,-,U1 VCC bypass
 C16,1,100nF 50V X7R,0603,Generic ceramic,-,U2 VCC bypass
-C17,1,100nF 50V X7R,0603,Generic ceramic,-,VBAT sense filter
-C18,1,100nF 50V X7R,0603,Generic ceramic,-,Q1 gate-source
+C18,1,100nF 50V X7R,0603,Generic ceramic,-,Q1 gate-source (soft start with R10, ~10ms)
 C19,1,100pF 50V C0G,0603,Generic ceramic,-,U1 feedforward
 C20,1,100pF 50V C0G,0603,Generic ceramic,-,U2 feedforward
+C21,1,1uF 25V X7R,0603,Generic ceramic,-,VBAT bulk HF
+C22,1,1uF 16V X7R,0603,Generic ceramic,-,U3 input
+C23,1,1uF 16V X7R,0603,Generic ceramic,-,U3 output
+C24,1,100nF 50V X7R,0603,Generic ceramic,-,U4 VS bypass
 R1,1,100k 1% 1/10W,0603,Generic,-,U1 FB top
 R2,1,19.1k 1% 1/10W,0603,Generic,-,U1 FB bottom
 R3,1,100k 1% 1/10W,0603,Generic,-,U2 FB top
-R4,1,32.4k 1% 1/10W,0603,Generic,-,U2 FB bottom
-R5,1,100k 1% 1/10W,0603,Generic,-,VBAT sense top
-R6,1,33k 1% 1/10W,0603,Generic,-,VBAT sense bottom
+R4,1,19.1k 1% 1/10W,0603,Generic,-,U2 FB bottom
 R7,1,2.2k 1% 1/10W,0603,Generic,-,VBAT LED
-R8,1,1k 1% 1/10W,0603,Generic,-,5V LED
-R9,1,1k 1% 1/10W,0603,Generic,-,3V3 LED
-R10,1,100k 1% 1/10W,0603,Generic,-,Q1 gate pull-down
+R8,1,1k 1% 1/10W,0603,Generic,-,5V1 LED
+R9,1,1k 1% 1/10W,0603,Generic,-,5V2 LED
+R10,1,100k 1% 1/10W,0603,Generic,-,Q1 gate pull-down (soft start)
 R11,1,20R 1% 1/10W,0603,Generic,-,U1 bootstrap series
 R12,1,20R 1% 1/10W,0603,Generic,-,U2 bootstrap series
 R13,1,100k 1% 1/10W,0603,Generic,-,U1 EN pull-up
 R14,1,100k 1% 1/10W,0603,Generic,-,U2 EN pull-up
+RSH,1,0.01R 3W 1% shunt,2512,2512 0.01R,C9900004483,INA219 sense resistor (~10A range)
+FB1,1,Ferrite bead 600R 0805,0805,CBW201209U601T,C9900022857,U1 input filter
+FB2,1,Ferrite bead 600R 0805,0805,CBW201209U601T,C9900022857,U2 input filter
+FB3,1,Ferrite bead 600R 0805,0805,CBW201209U601T,C9900022857,5V1 output filter
+FB4,1,Ferrite bead 600R 0805,0805,CBW201209U601T,C9900022857,5V2 output filter
+U3,1,LDO 3.3V 0.5A,SOT-23-5,ME6211C33M5G,C42754311,INA219 local supply (from 5V1)
+U4,1,INA219 current monitor,SOIC-8,INA219BIDR,C2155799,VBAT voltage + total current -> I2C
 J1,1,XT30PW-M,TH,XT30PW-M36,C9900222726,Battery input
-J3,1,JST-XH 2-pin,TH,B2B-XH-A,C19272845,5V output
-J4,1,JST-XH 2-pin,TH,B2B-XH-A,C19272845,3.3V output
-J5,1,XT30PW-F,TH,XT30PW-F20,C2913282,Motor VBAT output
-J6,1,5.08mm 2-pin terminal,TH,KF2EDGK-5.08-2P,C9900089420,Aux VBAT output
-J7,1,JST-XH 3-pin,TH,B3B-XH-AM-BK,C565985,VBAT sense / GND / 3.3V
+J3,1,JST-XH 2-pin,TH,B2B-XH-A,C19272845,5V1 output (ESP32 board)
+J4,1,JST-XH 2-pin,TH,B2B-XH-A,C19272845,5V2 output (STM32 carrier)
+J5,1,XT30PW-F,TH,XT30PW-F20,C2913282,Motor VBAT output (after SW2)
+J7,1,JST-XH 3-pin,TH,B3B-XH-AM-BK,C565985,I2C: SDA / SCL / GND (pull-ups on carrier)
 TP1,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,VBAT
-TP2,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,5V
-TP3,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,3.3V
+TP2,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,5V1
+TP3,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,5V2
 TP4,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,GND
-TP5,1,Test point,TH,TESTPOINT-TH_BD3.2,C9900007426,VBAT_SENSE

@@ -14,6 +14,12 @@ hardware/         schematics, PCB, pinmap, power/bring-up notes
 
 `../esp32-agent` is the prior ESP32-S3 firmware (ESP-IDF 6.1, CMake project `walle`); read its `AGENTS.md` and port from it instead of rewriting. Treat that repo as read-only.
 
+## Hardware designs
+
+- Power board: `hardware/power-board/` — 2S Li-ion input, VBAT direct output, 5 V/3 A and 3.3 V/3 A MP2315 rails. Schematic, BOM, netlist, layout and test plan are in that folder.
+- STM32/TB6612/encoder wiring: `hardware/stm32-car-wiring.md`.
+- EasyEDA Pro work uses the installed `easyeda-api` skill and the local bridge on ports 49620–49629. The extension is `run-api-gateway.eext`; see `hardware/power-board/easyeda/README.md`.
+
 ## Tier boundaries (do not blur)
 
 - STM32: motor PWM, encoders, steering servo, IMU/range sensors, fixed-period control loop. No WiFi, audio, display, or cloud calls.

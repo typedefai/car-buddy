@@ -175,7 +175,7 @@ STM32 side is core + carrier; the ESP32 side integrates the module directly.
   the ESP32 stays separate.
 - Fallback: 天空星 WebUSB DFU browser flashing (no programmer needed).
 
-### D10 — Power board v2 + board-level power (decided 2026-11-19)
+### D10 — Power board v2 + board-level power (decided 2026-11-19, buck revised 2026-11-19)
 
 The old `power-board/` design is revised in place into a VBAT + 5 V board.
 
@@ -202,9 +202,9 @@ battery box (2x26650 + BMS + box fuse 7.5A)
 |          |    + local 3.3V LDO           3-pin       |
 |          |    (ME6211 from 5V)           SDA/SCL/GND |
 |          |                                           |
-|          +-- ferrite -- MP2315 #1 ---> [2] JST-XH    |
+|          +-- ferrite -- TPS563201 #1 ---> [2] JST-XH  |
 |          |                  5V/3A         5V ESP32   |
-|          +-- ferrite -- MP2315 #2 ---> [3] JST-XH    |
+|          +-- ferrite -- TPS563201 #2 ---> [3] JST-XH  |
 |                             5V/3A         5V STM32   |
 +-----------------------------------------------------+
 ```
@@ -218,11 +218,32 @@ battery box (2x26650 + BMS + box fuse 7.5A)
 
 Test points (VBAT/5 V/GND) are not counted as channels.
 
-- Rails: VBAT direct (motors) + two independent MP2315 5 V / 3 A, one per
-  output (review change: the ESP32 board's amp is a switching noise source;
-  a dedicated buck per board keeps it off the STM32 logic supply and gives
-  each board its own fault domain). Each output keeps a ferrite bead +
-  bulk cap.
+- Rails: VBAT direct (motors) + two independent 5 V / 3 A bucks, one per
+  output (the ESP32 board's amp is a switching noise source; a dedicated
+  buck per board keeps it off the STM32 logic supply and gives each board
+  its own fault domain). Each output keeps a ferrite bead + bulk cap.
+- Buck converter: **TPS563201DDCR (TI, SOT-23-THIN-6, LCSC C116592)**
+  replaces the MP2315 (decided 2026-11-19). Why:
+  - Cost: MP2315 has risen to ~9 CNY at LCSC; TPS563201DDCR is ~0.4 CNY
+    at 10+ (0.33 at 100+) with 100K+ self-operated stock. 2 channels:
+    ~18 CNY -> ~0.8 CNY.
+  - Supply: TI part with huge, stable LCSC inventory - fits the
+    "no gray-market supply hassle" project goal; MPS pricing/supply has
+    become the hassle.
+  - Simpler circuit: D-CAP2 control with internal compensation and an
+    integrated bootstrap drops 5 parts per channel (bootstrap C+R, VCC
+    bypass, feedforward cap, AAM strap): ~17 -> ~10 parts per buck,
+    64 -> ~54 board parts total.
+  - Same envelope: 3 A synchronous, 4.5-17 V input (same as MP2315:
+    fine for 2S/3S, no 1S), 580 kHz, and the existing 4.7 uH inductor
+    plus low-ESR MLCC output caps carry over unchanged (D-CAP2 prefers
+    ceramic output caps).
+  - Package: 6-pin 0.65 mm pitch, easier to hand-solder than TSOT-23-8.
+  - FB divider re-scales to the 0.768 V reference: 100k/18.2k = 4.99 V
+    (was 100k/19.1k at the 0.8 V reference).
+  - Implementation note: schematic + PCB still carry the MP2315 at the
+    time of this decision; the rework follows the rebuild pipeline
+    (build_schematic.py -> importChanges -> place/route/DRC).
 - INA219 on the VBAT rail (0.01 ohm shunt, ~10 A range), powered by a
   local ME6211 3.3 V LDO from 5 V on the power board (review change: no
   power backfeed from the carrier and the power board is bench-testable

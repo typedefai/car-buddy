@@ -3,12 +3,13 @@
 2S Li-ion input, direct VBAT motor output, two independent 5 V rails, and
 INA219 telemetry for the car.
 
-**Status:** v2 schematic rebuilt and verified in EasyEDA Pro
-(2026-11-19): one A4 sheet, 8 blocks, 64 components, 32 nets — netlist
-matches `netlist.csv` (0 differences) and the cross-net wire-collision
-check is clean. **The PCB is still the old v1 layout and needs a v2 redo.**
-The editable project is in [easyeda/car-buddy-power](easyeda/car-buddy-power/).
-Screenshot: [schematic-v2.png](schematic-v2.png).
+**Status:** v2 schematic and PCB done in EasyEDA Pro (2026-11-19):
+schematic = 8 blocks / 64 components / 32 nets (netlist-verified); PCB =
+100 x 86 mm, 2 layers, placed + autorouted + GND pours, **DRC 0
+violations**. The power traces still need a manual >= 3 mm re-route in the
+GUI before Gerber export. The editable project is in
+[easyeda/car-buddy-power](easyeda/car-buddy-power/).
+Screenshots: [schematic-v2.png](schematic-v2.png), [pcb-v2.png](pcb-v2.png).
 
 ## Inputs and outputs
 
@@ -95,8 +96,8 @@ Detailed connections: [schematic.md](schematic.md) and
 
 ## Open items
 
-- **PCB redo** for v2: new outline/placement/routing per D10 (VBAT >= 3 mm
-  + pours), then DRC and the test plan.
+- **Manual power-trace pass in the EasyEDA GUI**: re-route VBAT (>= 3 mm +
+  pours) and 5V (>= 0.8 mm) before Gerber export — see `pcb-layout.md`.
 - Measure stall current on the bench to confirm the 7.5 A fuse and the
   AT8236 VREF limit (see DECISIONS.md open questions).
-- Update `pcb-layout.md` and `test-plan.md` for the v2 board.
+- Update `test-plan.md` for the v2 board (dual 5 V, INA219).

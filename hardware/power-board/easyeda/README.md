@@ -17,9 +17,9 @@ Open it in EasyEDA Pro with **File -> Open -> Open Local Project** and pick
 
 | Document | Content |
 |---|---|
-| Schematic | one A4 sheet, 8 titled blocks, 64 components, 32 nets — **v2 rebuilt 2026-11-19** |
+| Schematic | one A4 sheet, 8 titled blocks, 64 components, 32 nets — v2 rebuilt 2026-11-19 |
 | Nets | validated against `../netlist.csv` (0 differences) + cross-net wire-collision check (0 touches) |
-| PCB | **stale** — still the old 70 x 50 mm v1 layout (3.3 V buck, SI4435, 5x20 fuse); needs a v2 redo |
+| PCB | **v2**: 100 x 86 mm, 2 layers, 64 parts placed, autorouted, GND pours, DRC 0 violations. Power tracks need a manual >= 3 mm re-route before Gerber export |
 
 ## Schematic notes (v2)
 
@@ -48,11 +48,16 @@ Open it in EasyEDA Pro with **File -> Open -> Open Local Project** and pick
 
 ## PCB notes
 
-- Board outline: closed polyline on the Board Outline layer (11).
-- Placement coordinates are in millimetres from the lower-left corner.
-- Signal tracks 0.25 mm; power nets 0.3 mm where clearance allows — the v2
-  PCB must use >= 3 mm VBAT traces + pours (D10).
+- Board outline: closed polyline on layer 11 (`pcb_PrimitivePolyline.create`
+  with literal layer 11 — the `EPCB_LayerId` enum global is NOT defined in
+  the bridge runtime, use the documented numeric values).
+- Board: 100 x 86 mm, origin at lower-left. Placement coordinates in
+  millimetres, see `place_pcb.py`.
+- Signal tracks 10 mil (autorouter default); the VBAT/5V power tracks must
+  be re-routed manually in the GUI (>= 3 mm VBAT + pours, per
+  DECISIONS.md D10) before Gerber export.
 - GND pours on both layers, inset 0.3 mm, priority 1.
+- Mounting: 4 x 3.2 mm NPTH (H0-H3), corners.
 
 ## Scripts
 
@@ -73,7 +78,10 @@ run them from this folder with the EasyEDA window open and the
 | `check_stubs.py` | Cross-net wire-collision check (0 touches required) |
 | `check_netlist.py` | Compares the EasyEDA netlist against `../netlist.csv` |
 | `shot.py PAGE_UUID OUT.png` | Screenshot a schematic page |
-| `place_pcb.py` / `route_pcb.py` | **v1 PCB scripts — need a v2 rewrite** |
+| `place_pcb.py` | v2: outline + place 64 parts + mounting holes (idempotent) |
+| `check_placement.py` | Pairwise bbox overlap / off-board check |
+| `route_pcb.py` | v2: autoroute, GND pours, DRC (chunked for the 30 s bridge cap) |
+| `run_drc.py` | Run DRC and summarize violations |
 
 Typical rebuild (the bridge caps a request at ~30 s, hence the chunks):
 
@@ -85,6 +93,12 @@ python3 build_schematic.py decor
 python3 build_schematic.py save
 python3 check_stubs.py
 python3 check_netlist.py
+# then in EasyEDA: import changes into the PCB, or via bridge:
+#   eda.pcb_Document.importChanges('c105c79ca125469e', true)
+python3 place_pcb.py
+python3 check_placement.py
+python3 route_pcb.py
+python3 run_drc.py
 ```
 
 After changes, copy the live project back and commit:

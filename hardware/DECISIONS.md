@@ -59,17 +59,22 @@ cell box 1            cell box 2
        +------ series link ----> cell2+  16 AWG, full load current
    cell2- ----------- B- ------> BMS     16 AWG, full load current
 
-BMS P+ ---- box fuse 7.5A ----> XT30 -> power board
+BMS P+ ---- box fuse 10A T ----> XT30 -> power board
 BMS P- -----------------------> XT30 -> power board
 ```
 
 BMS buying checklist: 2S (not 1S/3S), Li-ion 3.7 V (not LiFePO4 3.2 V),
 continuous current >= 15 A.
 
-- Pack-side fuse: 7.5 A slow-blow blade holder at the battery box, before
-  the cable run to the power board (the board fuse is the second line).
-  16 AWG silicone wire, strain-relieved, heatshrink on every junction,
-  keyed XT30 connectors.
+- Pack-side fuse: 10 A T (time-delay / slow-blow) blade holder at the
+  battery box, before the cable run to the power board (the board fuse is
+  the second line). Sized for normal hard driving (3-5 A, 5-7 A peaks)
+  with stall left to the VREF clamp + firmware backoff - the fuse only
+  deals with shorts and gross overloads (a 50 A+ short still trips it
+  instantly). Consequence: battery-side wiring is 14 AWG silicone
+  (fuse rating must stay below wire ampacity); the BMS is >= 15 A.
+  16 AWG silicone wire for the balance-tap-free runs, strain-relieved,
+  heatshrink on every junction, keyed XT30 connectors.
 - Firmware (second line of defense): INA219 pack voltage -> warn at 6.4 V,
   stop motors at 6.0 V.
 - Mechanics: holders screwed down + velcro strap over the cells; label the
@@ -182,14 +187,14 @@ The old `power-board/` design is revised in place into a VBAT + 5 V board.
 Output channels (4) + input (1):
 
 ```text
-battery box (2x26650 + BMS + box fuse 7.5A)
+battery box (2x26650 + BMS + box fuse 10A T)
    |  XT30
    v
 +-----------------------------------------------------+
 |                  POWER BOARD v2                      |
 |                                                      |
 |  IN -- board fuse -- main switch -- AOD409 --        |
-|        (7.5A blade)  (rocker)      rev-polarity      |
+|        (10A T blade)  (rocker)      rev-polarity      |
 |                                    (+gate RC soft-   |
 |                                     start)           |
 |                                                      |
@@ -251,12 +256,12 @@ Test points (VBAT/5 V/GND) are not counted as channels.
   pull-ups live on the STM32 carrier. Replaces the analog VBAT divider.
 - Switches: main rocker + motor rocker (VBAT -> motor XT30 only), both
   rated >= 15 A DC (automotive/marine class - AC-rated rockers are not
-  enough for a 10 A inductive DC load). Fuses: blade type, 7.5 A
-  slow-blow at the battery box (D2) and on the board; value to be
-  confirmed by stall measurement.
+  enough for a 10 A inductive DC load). Fuses: blade type, 10 A T
+  (time-delay), one at the battery box (D2) and one on the board; value to
+  be confirmed by stall measurement.
 - Reverse-polarity FET: AOD409 (TO-252, ~8 mOhm, -40 V) instead of SI4435
   (review change: SI4435 is ~20 mOhm at 2S gate drive = 2 W at 10 A
-  stall, too hot for SOIC-8; AOD409 = ~1 W, and ~0.45 W at the 7.5 A fuse
+  stall, too hot for SOIC-8; AOD409 = ~1 W, and ~0.8 W at the 10 A fuse
   limit). Gate RC soft-start: 100 nF across gate-source with the 100 k
   pulldown (~10 ms turn-on) limits inrush into the bulk caps; normal
   power-on is via the rocker anyway.
@@ -285,6 +290,6 @@ Test points (VBAT/5 V/GND) are not counted as channels.
 ## Open questions
 
 - Bench measurements: real stall current per motor at 6 V and 8.4 V (fixes
-  the 7.5 A fuse value and the AT8236 VREF limit), and actual speed to
+  the 10 A T fuse value and the AT8236 VREF limit), and actual speed to
   confirm the D3 expectations.
 - 26650 cell health check and pair matching before installation (D2).

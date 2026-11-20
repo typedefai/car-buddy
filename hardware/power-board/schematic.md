@@ -9,7 +9,7 @@ cross-net wire-collision check.
 ```mermaid
 flowchart LR
   BAT["2x 26650 Li-ion<br/>6.0-8.4 V + BMS"] --> J1["J1 XT30"]
-  J1 --> F1["F1 ATO blade 7.5A"]
+  J1 --> F1["F1 ATO blade 10A T"]
   F1 --> SW1["SW1 KCD1-105"]
   SW1 --> Q1["Q1 AOD409<br/>reverse protection<br/>+ RC soft-start"]
   Q1 --> RSH["RSH 0.01R"]
@@ -30,7 +30,7 @@ flowchart LR
 |---|---|---|
 | J1.1 | F1.1 | battery positive from the pack BMS |
 | J1.2 | GND | battery negative / common ground |
-| F1.2 | SW1.1 | ATO blade fuse 7.5 A slow-blow |
+| F1.2 | SW1.1 | ATO blade fuse 10 A T (time-delay) |
 | SW1.2 | Q1.D | switched battery positive |
 | Q1.S | VBAT_RAIL | protected rail, battery side of RSH |
 | RSH | VBAT_LOAD | 0.01 ohm shunt; all loads hang off VBAT_LOAD |

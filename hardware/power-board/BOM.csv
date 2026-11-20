@@ -2,8 +2,8 @@ Ref,Qty,Value / Part,Package,Manufacturer PN,LCSC,Notes
 U1,1,MP2315 5V buck #1,TSOT-23-8,MP2315GJ-Z,C45889,5.0V 3A -> ESP32 board
 U2,1,MP2315 5V buck #2,TSOT-23-8,MP2315GJ-Z,C45889,5.0V 3A -> STM32 carrier
 Q1,1,P-MOSFET -40V -34A,TO-252,AOD409,C2874627,Reverse-polarity protection (D=bat S=load)
-F1,1,ATO blade fuse holder,TH,汽车中号保险丝座,C9900014676,Holds a 7.5 A slow-blow blade fuse
-FUSE,1,Blade fuse 7.5A slow-blow,中号 ATO,Automotive blade,-,Insert into F1; verify with stall test
+F1,1,ATO blade fuse holder,TH,汽车中号保险丝座,C9900014676,Holds a 10 A T (time-delay) blade fuse
+FUSE,1,Blade fuse 10A T time-delay,中号 ATO,Automotive blade,-,Insert into F1; verify with stall test
 SW1,1,Rocker switch 15A,KCD1-105,KCD1-105-3P,C6917312,Main power switch (pin 3 lamp NC)
 SW2,1,Rocker switch 15A,KCD1-105,KCD1-105-3P,C6917312,Motor rail switch (pin 3 lamp NC)
 D1,1,TVS 12V,SMB,SMBJ12A,C356757,VBAT transient clamp (12V standoff > 8.4V full charge)

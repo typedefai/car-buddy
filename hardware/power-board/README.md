@@ -16,7 +16,7 @@ Screenshots: [schematic-v2.png](schematic-v2.png), [pcb-v2.png](pcb-v2.png).
 | Item | Value |
 |---|---|
 | Battery | 2S Li-ion, 2 x 3.7 V 26650 cells (separate holders), 6.0-8.4 V |
-| Protection | 2S BMS (bought 保护板) at the battery box + box fuse 7.5 A |
+| Protection | 2S BMS (bought 保护板) at the battery box + box fuse 10 A T |
 | VBAT motor output | 6.0-8.4 V, 10 A class, XT30, behind its own switch (SW2) |
 | 5 V rail #1 | 5.0 V, 3 A, JST-XH -> ESP32 board (U1) |
 | 5 V rail #2 | 5.0 V, 3 A, JST-XH -> STM32 carrier (U2) |
@@ -27,7 +27,7 @@ Screenshots: [schematic-v2.png](schematic-v2.png), [pcb-v2.png](pcb-v2.png).
 
 ```text
 J1 XT30 (2S pack)
-  -> F1 ATO blade fuse (7.5 A slow-blow)
+  -> F1 ATO blade fuse (10 A T)
   -> SW1 KCD1-105 main switch
   -> Q1 AOD409 reverse-polarity P-FET (+ RC soft start)
   -> VBAT_RAIL
@@ -83,7 +83,7 @@ Detailed connections: [schematic.md](schematic.md) and
 | J7 | JST-XH 3-pin | 1 = SDA, 2 = SCL, 3 = GND (pull-ups on carrier) |
 | SW1 | KCD1-105 rocker | main power, series with VBAT |
 | SW2 | KCD1-105 rocker | motor rail cut |
-| F1 | ATO blade holder | 7.5 A slow-blow |
+| F1 | ATO blade holder | 10 A T |
 | TP1-TP4 | test points | VBAT, 5V1, 5V2, GND |
 
 ## Files
@@ -98,6 +98,6 @@ Detailed connections: [schematic.md](schematic.md) and
 
 - **Manual power-trace pass in the EasyEDA GUI**: re-route VBAT (>= 3 mm +
   pours) and 5V (>= 0.8 mm) before Gerber export — see `pcb-layout.md`.
-- Measure stall current on the bench to confirm the 7.5 A fuse and the
+- Measure stall current on the bench to confirm the 10 A T fuse and the
   AT8236 VREF limit (see DECISIONS.md open questions).
 - Update `test-plan.md` for the v2 board (dual 5 V, INA219).
